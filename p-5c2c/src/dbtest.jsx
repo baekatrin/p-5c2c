@@ -5,7 +5,7 @@
  * and insert new user records. Ensure your Supabase table has:
  * - id (uuid, default: gen_random_uuid())
  * - createdAt (timestamptz, default: now())
- * - email, firstName, lastName, bio, school, profilePic, userID (text or as needed)
+ * - email, firstName, lastName, bio, school, profilePic, userName (text or as needed)
  *
  * Environment: Create a .env file with:
  *   VITE_SUPABASE_URL=your-project-url
@@ -40,7 +40,7 @@ function App() {
   // We keep form values in React state so inputs are "controlled":
   // the value is always state, and onChange updates state.
   const [formData, setFormData] = useState({
-    userID: "",
+    userName: "",
     email: "",
     firstName: "",
     lastName: "",
@@ -92,7 +92,7 @@ function App() {
       bio: formData.bio.trim() || null,
       school: formData.school.trim() || null,
       profilePic: formData.profilePic.trim() || null,
-      userID: formData.userID.trim() || null,
+      userName: formData.userName.trim() || null,
       // Optional: set createdAt manually if your table has no default:
       // createdAt: new Date().toISOString(),
     };
@@ -115,7 +115,7 @@ function App() {
       bio: "",
       school: "",
       profilePic: "",
-      userID: "",
+      userName: "",
     });
   }
 
@@ -132,12 +132,12 @@ function App() {
         {/* Each input is "controlled": value comes from state, onChange updates state. */}
         
         <div className="field">
-          <label htmlFor="userID">User ID *</label>
+          <label htmlFor="userName">User Name *</label>
           <input
-            id="userID"
+            id="userName"
             type="text"
-            name="userID"
-            value={formData.userID}
+            name="userName"
+            value={formData.userName}
             onChange={handleChange}
             placeholder="e.g. 5C2C"
             disabled={isSubmitting}
