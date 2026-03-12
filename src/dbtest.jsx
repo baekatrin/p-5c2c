@@ -9,7 +9,7 @@
  *
  * Environment: Create a .env file with:
  *   VITE_SUPABASE_URL=your-project-url
- *   VITE_SUPABASE_PUBLISHABLE_KEY=your-anon-key
+ *   VITE_SUPABASE_ANON_KEY=your-anon-key
  */
 
 import { useState } from "react";
@@ -24,7 +24,7 @@ import "./dbtest.css";
 // Row Level Security (RLS) in Supabase controls what each key can do.
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+  import.meta.env.VITE_SUPABASE_ANON_KEY
 );
 
 // ---------------------------------------------------------------------------
