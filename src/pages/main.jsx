@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom"
 import './index.css'
 // import App from './dbtest.jsx'
 import HomePage from "./homepage";
-import CreateListing from "./create-listing";   
+import CreateListing from "./createlisting";   
 
 // JL addition for react routing import 
 // { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -14,7 +14,7 @@ export function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/"                element={<HomePage />} />
-        <Route path="/create-listing"  element={<CreateListing />} />
+        <Route path="/createlisting"  element={<CreateListing />} />
       </Routes>
     </BrowserRouter>
   );

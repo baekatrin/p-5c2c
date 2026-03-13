@@ -10,15 +10,18 @@
  * └─────────────────────────────────────┘
  *
  * ROUTING NOTE:
- * since not all of the pages have been made yet, i've just added some placeholders using useState
- * React Router has yet to be implemented
+ * We're using a simple `currentPage` state variable to simulate
+ * navigation. When you're ready to use a real router (like
+ * React Router), every `navigate("some-page")` call here maps
+ * directly to a <Route path="some-page"> you'd add later.
  */
 
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 
 // ─── PLACEHOLDER PRODUCT DATA ──────────────────────────────────────────────
+// In a real app, this would be fetched from a backend/database.
 // Each product has a unique `id` used to navigate to its own page.
 const PRODUCTS = [
   { id: 1, name: "Product Name", price: 100 },
@@ -32,7 +35,7 @@ const PRODUCTS = [
 ];
 
 // ─── SVG ICONS ────────────────────────────────────────────────────────────
-// TEMP SVG icons ---an icon library dependency can be made later with sam and miya's assets
+// Clean inline SVG icons so we don't need an icon library dependency.
 
 const HeartIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -68,7 +71,7 @@ const ImagePlaceholderIcon = () => (
  *
  * Props:
  *  navigate(pageName) — call this to switch pages.
- *                        pageName can be: "home", "create-listing",
+ *                        pageName can be: "home", "createlisting",
  *                        "favorites", "checkout", "messages", "profile"
  */
 function Navbar({ navigate }) {
@@ -106,8 +109,7 @@ function Navbar({ navigate }) {
       {/* ── CREATE LISTING BUTTON ── routes to the create listing page */}
       <button
         style={styles.createBtn}
-        onClick={() => navigate("create-listing")}
-      >
+        onClick={() => navigate("/createlisting")}      >
         + Create Listing
       </button>
 
@@ -115,23 +117,23 @@ function Navbar({ navigate }) {
       <div style={styles.iconCluster}>
 
         {/* Favorites heart → favorites page */}
-        <button style={styles.iconBtn} onClick={() => navigate("favorites")} title="Favorites">
+        <button style={styles.iconBtn} onClick={() => navigate("/favorites")} title="Favorites">
           <HeartIcon />
         </button>
 
         {/* Shopping cart → checkout page */}
-        <button style={styles.iconBtn} onClick={() => navigate("checkout")} title="Cart">
+        <button style={styles.iconBtn} onClick={() => navigate("/checkout")} title="Cart">
           <CartIcon />
         </button>
 
         {/* Inbox → messages page */}
-        <button style={styles.iconBtn} onClick={() => navigate("messages")} title="Messages">
+        <button style={styles.iconBtn} onClick={() => navigate("/messages")} title="Messages">
           <InboxIcon />
         </button>
 
         {/* User avatar → profile page
             Later: swap `avatarSrc` with the actual uploaded image from profile page */}
-        <button style={styles.avatarBtn} onClick={() => navigate("profile")} title="Profile">
+        <button style={styles.avatarBtn} onClick={() => navigate("/profile")} title="Profile">
           <div style={styles.avatarCircle}>
             {/* Placeholder initials — replace with <img> once user uploads a photo */}
             <span style={styles.avatarInitials}>U</span>
@@ -203,7 +205,7 @@ function PlaceholderPage({ pageName, navigate }) {
     <div style={styles.placeholderPage}>
       <h2 style={styles.placeholderTitle}>🚧 {pageName}</h2>
       <p style={styles.placeholderText}>This page hasn't been designed yet. Come back soon!</p>
-      <button style={styles.createBtn} onClick={() => navigate("home")}>
+      <button style={styles.createBtn} onClick={() => navigate("/")}>
         ← Back to Home
       </button>
     </div>
@@ -221,49 +223,65 @@ function PlaceholderPage({ pageName, navigate }) {
  *
  * When you add React Router later, you'd replace this with <Routes> / <Route>.
  */
-export default function HomePage() {
-  // `currentPage` starts as "home". It's a string like "favorites" or "product/3".
-  const [currentPage, setCurrentPage] = useState("home");
 
-  // This is the navigate function we pass to every child component
-  function navigate(pageName) {
-    setCurrentPage(pageName);
-    // Scroll back to top whenever you navigate
+// export default function HomePage() {
+//   // `currentPage` starts as "home". It's a string like "favorites" or "product/3".
+//   const [currentPage, setCurrentPage] = useState("home");
+
+//   // This is the navigate function we pass to every child component
+//   function navigate(pageName) {
+//     setCurrentPage(pageName);
+//     // Scroll back to top whenever you navigate
+//     window.scrollTo({ top: 0, behavior: "smooth" });
+//   }
+export default function HomePage() {   // ← also capitalize: HomePage not homepage
+  const navigateTo = useNavigate();
+
+  function navigate(path) {
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  // ── Decide what main content to show ──
-  let mainContent;
-
-  if (currentPage === "home") {
-    mainContent = <ProductGrid navigate={navigate} />;
-  } else if (currentPage.startsWith("product/")) {
-    // Product detail page — extract the ID from "product/3" → "3"
-    const productId = currentPage.split("/")[1];
-    mainContent = <PlaceholderPage pageName={`Product Page (ID: ${productId})`} navigate={navigate} />;
-  } else {
-    // All other pages (favorites, checkout, messages, profile, create-listing)
-    const pageLabels = {
-      "create-listing": "Create Listing Page",
-      "favorites":      "Favorites Page",
-      "checkout":       "Checkout Page",
-      "messages":       "Messages Page",
-      "profile":        "Profile Page",
-    };
-    const label = pageLabels[currentPage] || currentPage;
-    mainContent = <PlaceholderPage pageName={label} navigate={navigate} />;
+    navigateTo(path);
   }
 
   return (
     <div style={styles.appShell}>
-      {/* Navbar always visible at the top */}
       <Navbar navigate={navigate} />
-
-      {/* Main content area switches based on currentPage */}
-      {mainContent}
+      <ProductGrid navigate={navigate} />
     </div>
   );
 }
+
+//   // ── Decide what main content to show ──
+//   let mainContent;
+
+//   if (currentPage === "home") {
+//     mainContent = <ProductGrid navigate={navigate} />;
+//   } else if (currentPage.startsWith("product/")) {
+//     // Product detail page — extract the ID from "product/3" → "3"
+//     const productId = currentPage.split("/")[1];
+//     mainContent = <PlaceholderPage pageName={`Product Page (ID: ${productId})`} navigate={navigate} />;
+//   } else {
+//     // All other pages (favorites, checkout, messages, profile, createlisting)
+//     const pageLabels = {
+//       "createlisting": "Create Listing Page",
+//       "favorites":      "Favorites Page",
+//       "checkout":       "Checkout Page",
+//       "messages":       "Messages Page",
+//       "profile":        "Profile Page",
+//     };
+//     const label = pageLabels[currentPage] || currentPage;
+//     mainContent = <PlaceholderPage pageName={label} navigate={navigate} />;
+//   }
+
+//   return (
+//     <div style={styles.appShell}>
+//       {/* Navbar always visible at the top */}
+//       <Navbar navigate={navigate} />
+
+//       {/* Main content area switches based on currentPage */}
+//       {mainContent}
+//     </div>
+//   );
+// }
 
 // ─── STYLES ───────────────────────────────────────────────────────────────
 /**
