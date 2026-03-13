@@ -8,13 +8,7 @@
  * │  └── <ProductGrid /> (main content) │
  * │       └── <ProductCard /> × 8       │
  * └─────────────────────────────────────┘
- *
- * ROUTING NOTE:
- * We're using a simple `currentPage` state variable to simulate
- * navigation. When you're ready to use a real router (like
- * React Router), every `navigate("some-page")` call here maps
- * directly to a <Route path="some-page"> you'd add later.
- */
+
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
