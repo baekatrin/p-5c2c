@@ -14,7 +14,7 @@
 
 import { useState } from "react";
 import { createClient } from "@supabase/supabase-js";
-import "./dbtest.css";
+import "./create-listing.css";
 
 // ---------------------------------------------------------------------------
 // Supabase client
@@ -33,7 +33,7 @@ const supabase = createClient(
 // Change this to match your actual table name (e.g. "user_profiles" or "users").
 const USERS_TABLE = "User";
 
-function App() {
+function CreateListing() {
   // -------------------------------------------------------------------------
   // Form state – one state variable per input
   // -------------------------------------------------------------------------
@@ -240,4 +240,6 @@ function App() {
   );
 }
 
-export default App;
+// export default App;
+
+export default CreateListing;
