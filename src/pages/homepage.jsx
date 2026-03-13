@@ -109,8 +109,18 @@ function Navbar({ navigate }) {
       {/* ── CREATE LISTING BUTTON ── routes to the create listing page */}
       <button
         style={styles.createBtn}
-        onClick={() => navigate("/createlisting")}      >
+        onClick={() => navigate("/createlisting")}
+      >
         + Create Listing
+      </button>
+
+      {/* ── DB TEST (Sign Up) BUTTON ── routes to the dbtest / sign-up form */}
+      <button
+        style={styles.createBtn}
+        onClick={() => navigate("/dbtest")}
+        title="User Sign Up / DB Test"
+      >
+        Sign Up
       </button>
 
       {/* ── RIGHT-SIDE ICON CLUSTER ── */}

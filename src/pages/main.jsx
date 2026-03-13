@@ -2,12 +2,9 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from "react-router-dom"
 import './index.css'
-// import App from './dbtest.jsx'
 import HomePage from "./homepage";
-import CreateListing from "./createlisting";   
-
-// JL addition for react routing import 
-// { BrowserRouter, Routes, Route } from "react-router-dom";
+import CreateListing from "./createlisting";
+import Dbtest from "./dbtest";
 
 export function App() {
   return (
@@ -15,6 +12,7 @@ export function App() {
       <Routes>
         <Route path="/"                element={<HomePage />} />
         <Route path="/createlisting"  element={<CreateListing />} />
+        <Route path="/dbtest"         element={<Dbtest />} />
       </Routes>
     </BrowserRouter>
   );

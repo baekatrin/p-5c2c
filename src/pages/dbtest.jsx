@@ -14,18 +14,20 @@
 
 import { useState } from "react";
 import { createClient } from "@supabase/supabase-js";
-import "./create-listing.css";
+import "./dbtest.css";
 
 // ---------------------------------------------------------------------------
 // Supabase client
 // ---------------------------------------------------------------------------
-// createClient() connects your app to Supabase using the project URL and
-// the "anon" (public) key. The anon key is safe to use in the browser;
-// Row Level Security (RLS) in Supabase controls what each key can do.
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+// Use either VITE_SUPABASE_ANON_KEY or VITE_SUPABASE_PUBLISHABLE_KEY (same key).
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey =
+  import.meta.env.VITE_SUPABASE_ANON_KEY ||
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const supabase =
+  supabaseUrl && supabaseKey
+    ? createClient(supabaseUrl, supabaseKey)
+    : null;
 
 // ---------------------------------------------------------------------------
 // Table name in your Supabase project
@@ -82,9 +84,16 @@ function CreateListing() {
     setIsSubmitting(true);
     setMessage({ type: "", text: "" });
 
+    if (!supabase) {
+      setIsSubmitting(false);
+      setMessage({
+        type: "error",
+        text: "Supabase not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (or VITE_SUPABASE_PUBLISHABLE_KEY) to .env",
+      });
+      return;
+    }
+
     // Build the object that matches your table columns.
-    // Omit id and createdAt if your table has DEFAULT gen_random_uuid()
-    // and DEFAULT now() for them.
     const payload = {
       email: formData.email.trim() || null,
       firstName: formData.firstName.trim() || null,
@@ -121,6 +130,11 @@ function CreateListing() {
 
   return (
     <div className="app">
+      {!supabase && (
+        <div className="message message--error" style={{ marginBottom: "1rem" }} role="alert">
+          Supabase not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (or VITE_SUPABASE_PUBLISHABLE_KEY) to a <code>.env</code> file, then restart the dev server.
+        </div>
+      )}
       <header className="header">
         <h1>User Sign Up</h1>
         <p className="subtitle">
