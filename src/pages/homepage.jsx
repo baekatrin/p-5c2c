@@ -18,20 +18,22 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import logo from "../assets/logo1.png";
+import Card from "./card";
 
 
 // ─── PLACEHOLDER PRODUCT DATA ──────────────────────────────────────────────
 // In a real app, this would be fetched from a backend/database.
 // Each product has a unique `id` used to navigate to its own page.
 const PRODUCTS = [
-  { id: 1, name: "Product Name", price: 100 },
-  { id: 2, name: "Product Name", price: 100 },
-  { id: 3, name: "Product Name", price: 100 },
-  { id: 4, name: "Product Name", price: 100 },
-  { id: 5, name: "Product Name", price: 100 },
-  { id: 6, name: "Product Name", price: 100 },
-  { id: 7, name: "Product Name", price: 100 },
-  { id: 8, name: "Product Name", price: 100 },
+  { id: 1, name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 100,  aspectRatio: "3/2" },
+  { id: 2, name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 150, aspectRatio: "1/2" },
+  { id: 3, name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 100, aspectRatio: "4/5" },
+  { id: 4, name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 200, aspectRatio: "2/3" },
+  { id: 5, name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 100, aspectRatio: "1/3" },
+  { id: 6, name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 100, aspectRatio: "3/2" },
+  { id: 7, name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 150, aspectRatio: "2/5" },
+  { id: 8, name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 100, aspectRatio: "4/3" },
 ];
 
 // ─── SVG ICONS ────────────────────────────────────────────────────────────
@@ -57,13 +59,6 @@ const InboxIcon = () => (
   </svg>
 );
 
-const ImagePlaceholderIcon = () => (
-  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#bbb" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-    <circle cx="8.5" cy="8.5" r="1.5" />
-    <polyline points="21 15 16 10 5 21" />
-  </svg>
-);
 
 // ─── NAVBAR COMPONENT ─────────────────────────────────────────────────────
 /**
@@ -92,7 +87,10 @@ function Navbar({ navigate }) {
         onClick={() => navigate("home")}
         title="Go to homepage"
       >
-        5C2C
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+          <img src={logo} alt="5C2C logo" style={{ height: "40px", transform: "translateY(3px)" }} />
+          <p style={{ margin: 0, fontSize: "11px", fontFamily: "'Pally', sans-serif", letterSpacing: "2px" }}>MARKETPLACE</p>
+        </div>
       </button>
 
       {/* ── SEARCH BAR ── controlled input (React tracks every keystroke) */}
@@ -116,7 +114,7 @@ function Navbar({ navigate }) {
 
       {/* ── DB TEST (Sign Up) BUTTON ── routes to the dbtest / sign-up form */}
       <button
-        style={styles.createBtn}
+        style={styles.signUpBtn}
         onClick={() => navigate("/dbtest")}
         title="User Sign Up / DB Test"
       >
@@ -155,70 +153,33 @@ function Navbar({ navigate }) {
   );
 }
 
-// ─── PRODUCT CARD COMPONENT ───────────────────────────────────────────────
-/**
- * ProductCard — displays a single product listing.
- *
- * Props:
- *  product  — { id, name, price }
- *  navigate — same navigation function passed down from parent
- */
-function ProductCard({ product, navigate }) {
-  return (
-    <div
-      style={styles.card}
-      onClick={() => navigate(`product/${product.id}`)}  // e.g. "product/3"
-      title={`View ${product.name}`}
-    >
-      {/* Image area — grey box with icon for now */}
-      <div style={styles.cardImage}>
-        <ImagePlaceholderIcon />
-      </div>
-
-      {/* Text info below the image */}
-      <div style={styles.cardInfo}>
-        <p style={styles.cardName}>{product.name}</p>
-        <p style={styles.cardPrice}>${product.price}</p>
-      </div>
-    </div>
-  );
-}
-
 // ─── PRODUCT GRID COMPONENT ───────────────────────────────────────────────
 /**
  * ProductGrid — lays out all ProductCards in a responsive 4-column grid.
  */
 function ProductGrid({ navigate }) {
+  const columns = [[], [], [], []];
+  PRODUCTS.forEach((product, index) => {
+    columns[index % 4].push({ product, index });
+  });
+
   return (
     <main style={styles.gridWrapper}>
       <div style={styles.grid}>
-        {/* .map() loops over PRODUCTS array and renders one card per item */}
-        {PRODUCTS.map((product) => (
-          <ProductCard
-            key={product.id}       // React needs a unique `key` when rendering lists
-            product={product}
-            navigate={navigate}
-          />
+        {columns.map((col, colIndex) => (
+          <div key={colIndex} style={styles.column}>
+            {col.map(({ product }) => (
+              <Card
+                key={product.id}
+                listing={product}
+                onClick={() => navigate(`product/${product.id}`)}
+                aspectRatio={product.aspectRatio}
+              />
+            ))}
+          </div>
         ))}
       </div>
     </main>
-  );
-}
-
-// ─── PLACEHOLDER PAGE COMPONENT ───────────────────────────────────────────
-/**
- * PlaceholderPage — shown when navigating to a page not yet designed.
- * You'll replace this with real page components later!
- */
-function PlaceholderPage({ pageName, navigate }) {
-  return (
-    <div style={styles.placeholderPage}>
-      <h2 style={styles.placeholderTitle}>🚧 {pageName}</h2>
-      <p style={styles.placeholderText}>This page hasn't been designed yet. Come back soon!</p>
-      <button style={styles.createBtn} onClick={() => navigate("/")}>
-        ← Back to Home
-      </button>
-    </div>
   );
 }
 
@@ -303,8 +264,8 @@ const styles = {
   // ── App shell
   appShell: {
     minHeight: "100vh",
-    backgroundColor: "#f5f5f5",
-    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+    backgroundColor: "#fff5da",
+    fontFamily: "'Pally', sans-serif",
   },
 
   // ── Navbar
@@ -313,8 +274,8 @@ const styles = {
     alignItems: "center",
     gap: "12px",
     padding: "14px 28px",
-    backgroundColor: "#ffffff",
-    borderBottom: "1px solid #e0e0e0",
+    backgroundColor: "#fff5da",
+    borderBottom: "1px solid #000000",
     position: "sticky",           // Stays at top when scrolling
     top: 0,
     zIndex: 100,
@@ -337,7 +298,7 @@ const styles = {
     width: "100%",
     padding: "10px 16px",
     fontSize: "14px",
-    border: "1.5px solid #ddd",
+    border: "1.5px solid #000000",
     borderRadius: "8px",
     outline: "none",
     backgroundColor: "#fafafa",
@@ -345,9 +306,21 @@ const styles = {
   },
   createBtn: {
     padding: "10px 20px",
-    backgroundColor: "#111",
+    backgroundColor: "#941b32",
     color: "#fff",
-    border: "none",
+    border: "1.5px solid #000000",
+    borderRadius: "8px",
+    fontSize: "14px",
+    fontWeight: "600",
+    cursor: "pointer",
+    flexShrink: 0,
+    whiteSpace: "nowrap",
+  },
+  signUpBtn: {
+    padding: "10px 20px",
+    backgroundColor: "#f39836",
+    color: "#fff",
+    border: "1.5px solid #000000",
     borderRadius: "8px",
     fontSize: "14px",
     fontWeight: "600",
@@ -400,9 +373,15 @@ const styles = {
     padding: "28px 32px",
   },
   grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(4, 1fr)",  // 4 equal columns
+    display: "flex",
     gap: "20px",
+    alignItems: "flex-start",
+  },
+  column: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "20px",
+    flex: 1,
   },
 
   // ── Product Card
