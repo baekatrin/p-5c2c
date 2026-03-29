@@ -5,6 +5,7 @@ import './index.css'
 import HomePage from "./homepage";
 import CreateListing from "./createlisting";
 import Dbtest from "./dbtest";
+import ViewListing from "./viewlisting";
 
 export function App() {
   return (
@@ -13,6 +14,7 @@ export function App() {
         <Route path="/"                element={<HomePage />} />
         <Route path="/createlisting"  element={<CreateListing />} />
         <Route path="/dbtest"         element={<Dbtest />} />
+        <Route path="/product/:id"    element={<ViewListing />} />
       </Routes>
     </BrowserRouter>
   );

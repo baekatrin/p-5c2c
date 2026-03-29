@@ -18,7 +18,7 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import logo from "../assets/logo1.png";
+import logo from "../assets/logo3.png";
 import Card from "./card";
 
 
@@ -45,12 +45,6 @@ const HeartIcon = () => (
   </svg>
 );
 
-const CartIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
-    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-  </svg>
-);
 
 const InboxIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -112,15 +106,6 @@ function Navbar({ navigate }) {
         + Create Listing
       </button>
 
-      {/* ── DB TEST (Sign Up) BUTTON ── routes to the dbtest / sign-up form */}
-      <button
-        style={styles.signUpBtn}
-        onClick={() => navigate("/dbtest")}
-        title="User Sign Up / DB Test"
-      >
-        Sign Up
-      </button>
-
       {/* ── RIGHT-SIDE ICON CLUSTER ── */}
       <div style={styles.iconCluster}>
 
@@ -129,21 +114,14 @@ function Navbar({ navigate }) {
           <HeartIcon />
         </button>
 
-        {/* Shopping cart → checkout page */}
-        <button style={styles.iconBtn} onClick={() => navigate("/checkout")} title="Cart">
-          <CartIcon />
-        </button>
-
         {/* Inbox → messages page */}
         <button style={styles.iconBtn} onClick={() => navigate("/messages")} title="Messages">
           <InboxIcon />
         </button>
 
-        {/* User avatar → profile page
-            Later: swap `avatarSrc` with the actual uploaded image from profile page */}
-        <button style={styles.avatarBtn} onClick={() => navigate("/profile")} title="Profile">
+        {/* User avatar → sign up / profile page */}
+        <button style={styles.avatarBtn} onClick={() => navigate("/dbtest")} title="Sign Up / Profile">
           <div style={styles.avatarCircle}>
-            {/* Placeholder initials — replace with <img> once user uploads a photo */}
             <span style={styles.avatarInitials}>U</span>
           </div>
         </button>
@@ -172,7 +150,7 @@ function ProductGrid({ navigate }) {
               <Card
                 key={product.id}
                 listing={product}
-                onClick={() => navigate(`product/${product.id}`)}
+                onClick={() => navigate(`/product/${product.id}`)}
                 aspectRatio={product.aspectRatio}
               />
             ))}
@@ -274,7 +252,7 @@ const styles = {
     alignItems: "center",
     gap: "12px",
     padding: "14px 28px",
-    backgroundColor: "#fff5da",
+    backgroundColor: "#fffaec",
     borderBottom: "1px solid #000000",
     position: "sticky",           // Stays at top when scrolling
     top: 0,

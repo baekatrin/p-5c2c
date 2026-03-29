@@ -1,0 +1,415 @@
+import { useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+
+// Placeholder sub-images — 5 colored blocks to simulate a real image gallery
+const PLACEHOLDER_IMAGES = [
+  { color: "#d4c5b0", label: "1" },
+  { color: "#b0c5d4", label: "2" },
+  { color: "#b0d4b8", label: "3" },
+  { color: "#d4b0b0", label: "4" },
+  { color: "#d4d0b0", label: "5" },
+];
+
+const PRODUCTS = [
+  { id: 1, name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 100,  category: "Category" },
+  { id: 2, name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 150, category: "Category" },
+  { id: 3, name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 100, category: "Category" },
+  { id: 4, name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 200, category: "Category" },
+  { id: 5, name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 100, category: "Category" },
+  { id: 6, name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 100, category: "Category" },
+  { id: 7, name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 150, category: "Category" },
+  { id: 8, name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 100, category: "Category" },
+];
+
+const HeartIcon = ({ filled }) => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill={filled ? "#941b32" : "none"} stroke={filled ? "#941b32" : "#333"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+  </svg>
+);
+
+const BackIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="15 18 9 12 15 6" />
+  </svg>
+);
+
+export default function ViewListing() {
+  const { id } = useParams();
+  const navigateTo = useNavigate();
+  const [favorited, setFavorited] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  const listing = PRODUCTS.find((p) => p.id === parseInt(id)) || PRODUCTS[0];
+
+  // Use real images if available, otherwise fall back to placeholders
+  const hasRealImages = listing.images && listing.images.length > 0;
+  const images = hasRealImages ? listing.images : PLACEHOLDER_IMAGES;
+
+  const priceLabel =
+    listing.priceMin === listing.priceMax
+      ? `$${listing.priceMin}`
+      : `$${listing.priceMin} – $${listing.priceMax}`;
+
+  return (
+    <div style={styles.page}>
+
+      {/* Back button */}
+      <button style={styles.backBtn} onClick={() => navigateTo(-1)}>
+        <BackIcon />
+        Back
+      </button>
+
+      <div style={styles.layout}>
+
+        {/* ── LEFT: Image column ── */}
+        <div style={styles.imageColumn}>
+
+          {/* Main image */}
+          <div style={styles.imageBox}>
+            {hasRealImages ? (
+              <img src={images[activeIndex]} alt={listing.name} style={styles.image} />
+            ) : (
+              <div style={{ ...styles.placeholderSwatch, backgroundColor: images[activeIndex].color }}>
+                <span style={styles.placeholderLabel}>Image {images[activeIndex].label}</span>
+              </div>
+            )}
+
+            {/* Arrows + dots row — bottom center */}
+            <div style={styles.dotsOverlay}>
+              {images.length > 1 && (
+                <button
+                  style={styles.arrowBtn}
+                  onClick={() => setActiveIndex((i) => (i - 1 + images.length) % images.length)}
+                >
+                  ‹
+                </button>
+              )}
+              {images.map((_, i) => (
+                <span
+                  key={i}
+                  style={{ ...styles.dot, ...(i === activeIndex ? styles.dotActive : {}) }}
+                  onClick={() => setActiveIndex(i)}
+                />
+              ))}
+              {images.length > 1 && (
+                <button
+                  style={styles.arrowBtn}
+                  onClick={() => setActiveIndex((i) => (i + 1) % images.length)}
+                >
+                  ›
+                </button>
+              )}
+            </div>
+
+            {/* Heart button — bottom right */}
+            <button
+              style={styles.heartBtn}
+              onClick={() => setFavorited((f) => !f)}
+              title={favorited ? "Remove from favorites" : "Add to favorites"}
+            >
+              <HeartIcon filled={favorited} />
+            </button>
+          </div>
+
+          {/* Thumbnail strip */}
+          <div style={styles.thumbnailStrip}>
+            {images.map((img, i) => (
+              <button
+                key={i}
+                style={{
+                  ...styles.thumbnail,
+                  ...(i === activeIndex ? styles.thumbnailActive : {}),
+                  backgroundColor: hasRealImages ? "#e0e0e0" : img.color,
+                }}
+                onClick={() => setActiveIndex(i)}
+              >
+                {hasRealImages ? (
+                  <img src={img} alt={`${listing.name} ${i + 1}`} style={styles.thumbnailImg} />
+                ) : (
+                  <span style={styles.thumbnailLabel}>{img.label}</span>
+                )}
+              </button>
+            ))}
+          </div>
+
+        </div>
+
+        {/* ── RIGHT: Details ── */}
+        <div style={styles.detailsColumn}>
+
+          {/* Title + Price */}
+          <div style={styles.titlePriceRow}>
+            <h1 style={styles.title}>{listing.name}</h1>
+            <div style={styles.priceBox}>{priceLabel}</div>
+          </div>
+
+          {/* Category */}
+          <div style={styles.categoryBox}>{listing.category}</div>
+
+          {/* Description */}
+          <div style={styles.descriptionBox}>
+            <p style={styles.descriptionText}>{listing.description}</p>
+          </div>
+
+          {/* About the Creator */}
+          <div style={styles.creatorRow}>
+            <div style={styles.creatorAvatar}>
+              <span style={styles.creatorInitial}>
+                {listing.seller ? listing.seller[0] : "S"}
+              </span>
+            </div>
+            <div style={styles.creatorInfo}>
+              <p style={styles.creatorLabel}>About the Creator</p>
+              <p style={styles.creatorName}>{listing.seller}</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const styles = {
+  page: {
+    minHeight: "100vh",
+    backgroundColor: "#fff5da",
+    fontFamily: "'Pally', sans-serif",
+    padding: "24px 40px",
+  },
+  backBtn: {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    fontSize: "14px",
+    fontWeight: "600",
+    color: "#333",
+    padding: "8px 0",
+    marginBottom: "24px",
+    fontFamily: "'Pally', sans-serif",
+  },
+
+  layout: {
+    display: "flex",
+    gap: "48px",
+    alignItems: "flex-start",
+  },
+
+  // ── Left column
+  imageColumn: {
+    flexShrink: 0,
+    width: "340px",
+  },
+  imageBox: {
+    position: "relative",
+    width: "100%",
+    aspectRatio: "3/4",
+    backgroundColor: "#e0e0e0",
+    borderRadius: "16px",
+    border: "1.5px solid #000",
+    overflow: "hidden",
+  },
+  image: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+  },
+  placeholderSwatch: {
+    width: "100%",
+    height: "100%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  placeholderLabel: {
+    fontSize: "18px",
+    fontWeight: "700",
+    color: "rgba(0,0,0,0.3)",
+    fontFamily: "'Pally', sans-serif",
+  },
+  arrowBtn: {
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    color: "#fff",
+    fontSize: "20px",
+    lineHeight: "1",
+    padding: "0 2px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dotsOverlay: {
+    position: "absolute",
+    bottom: "14px",
+    left: "50%",
+    transform: "translateX(-50%)",
+    display: "flex",
+    gap: "6px",
+    alignItems: "center",
+  },
+  dot: {
+    width: "8px",
+    height: "8px",
+    borderRadius: "50%",
+    backgroundColor: "rgba(255,255,255,0.5)",
+    cursor: "pointer",
+    transition: "background 0.2s",
+  },
+  dotActive: {
+    backgroundColor: "#fff",
+  },
+  heartBtn: {
+    position: "absolute",
+    bottom: "10px",
+    right: "10px",
+    background: "rgba(255,255,255,0.85)",
+    border: "none",
+    cursor: "pointer",
+    padding: "8px",
+    borderRadius: "50%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  // Thumbnail strip
+  thumbnailStrip: {
+    display: "flex",
+    gap: "8px",
+    marginTop: "12px",
+  },
+  thumbnail: {
+    flex: 1,
+    aspectRatio: "1/1",
+    borderRadius: "8px",
+    border: "1.5px solid #ccc",
+    cursor: "pointer",
+    overflow: "hidden",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 0,
+    transition: "border-color 0.15s",
+  },
+  thumbnailActive: {
+    border: "2px solid #000",
+  },
+  thumbnailImg: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+  },
+  thumbnailLabel: {
+    fontSize: "12px",
+    fontWeight: "700",
+    color: "rgba(0,0,0,0.35)",
+    fontFamily: "'Pally', sans-serif",
+  },
+
+  // ── Right column
+  detailsColumn: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px",
+  },
+  titlePriceRow: {
+    display: "flex",
+    gap: "16px",
+    alignItems: "flex-start",
+  },
+  title: {
+    flex: 1,
+    margin: 0,
+    fontSize: "22px",
+    fontWeight: "800",
+    color: "#111",
+    border: "1.5px solid #000",
+    borderRadius: "8px",
+    padding: "12px 16px",
+    backgroundColor: "#fff",
+    fontFamily: "'Pally', sans-serif",
+  },
+  priceBox: {
+    flexShrink: 0,
+    fontSize: "18px",
+    fontWeight: "800",
+    color: "#111",
+    border: "1.5px solid #000",
+    borderRadius: "8px",
+    padding: "12px 16px",
+    backgroundColor: "#fff",
+    whiteSpace: "nowrap",
+    fontFamily: "'Pally', sans-serif",
+  },
+  categoryBox: {
+    fontSize: "14px",
+    fontWeight: "600",
+    color: "#444",
+    border: "1.5px solid #000",
+    borderRadius: "8px",
+    padding: "12px 16px",
+    backgroundColor: "#fff",
+    fontFamily: "'Pally', sans-serif",
+  },
+  descriptionBox: {
+    border: "1.5px solid #000",
+    borderRadius: "8px",
+    padding: "16px",
+    backgroundColor: "#fff",
+    minHeight: "120px",
+  },
+  descriptionText: {
+    margin: 0,
+    fontSize: "14px",
+    color: "#333",
+    lineHeight: "1.6",
+    fontFamily: "'Pally', sans-serif",
+  },
+  creatorRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "16px",
+  },
+  creatorAvatar: {
+    flexShrink: 0,
+    width: "52px",
+    height: "52px",
+    borderRadius: "50%",
+    border: "1.5px solid #000",
+    backgroundColor: "#ddd",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  creatorInitial: {
+    fontSize: "20px",
+    fontWeight: "700",
+    color: "#555",
+  },
+  creatorInfo: {
+    flex: 1,
+    border: "1.5px solid #000",
+    borderRadius: "8px",
+    padding: "12px 16px",
+    backgroundColor: "#fff",
+  },
+  creatorLabel: {
+    margin: "0 0 4px",
+    fontSize: "12px",
+    color: "#888",
+    fontWeight: "400",
+    fontFamily: "'Pally', sans-serif",
+  },
+  creatorName: {
+    margin: 0,
+    fontSize: "14px",
+    fontWeight: "700",
+    color: "#111",
+    fontFamily: "'Pally', sans-serif",
+  },
+};
