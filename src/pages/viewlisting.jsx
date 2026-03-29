@@ -27,6 +27,14 @@ const HeartIcon = ({ filled }) => (
   </svg>
 );
 
+const ShareIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="12 2 12 14" />
+    <polyline points="8 6 12 2 16 6" />
+    <path d="M20 14v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-6" />
+  </svg>
+);
+
 const BackIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="15 18 9 12 15 6" />
@@ -101,14 +109,23 @@ export default function ViewListing() {
               )}
             </div>
 
-            {/* Heart button — bottom right */}
-            <button
-              style={styles.heartBtn}
-              onClick={() => setFavorited((f) => !f)}
-              title={favorited ? "Remove from favorites" : "Add to favorites"}
-            >
-              <HeartIcon filled={favorited} />
-            </button>
+            {/* Heart + Share buttons — bottom right */}
+            <div style={styles.imageBtnStack}>
+              <button
+                style={styles.imageActionBtn}
+                onClick={() => setFavorited((f) => !f)}
+                title={favorited ? "Remove from favorites" : "Add to favorites"}
+              >
+                <HeartIcon filled={favorited} />
+              </button>
+              <button
+                style={styles.imageActionBtn}
+                onClick={() => navigator.clipboard.writeText(window.location.href)}
+                title="Copy link to clipboard"
+              >
+                <ShareIcon />
+              </button>
+            </div>
           </div>
 
           {/* Thumbnail strip */}
@@ -137,14 +154,14 @@ export default function ViewListing() {
         {/* ── RIGHT: Details ── */}
         <div style={styles.detailsColumn}>
 
-          {/* Title + Price */}
+          {/* Title + Category + Price */}
           <div style={styles.titlePriceRow}>
-            <h1 style={styles.title}>{listing.name}</h1>
+            <div style={styles.titleCategoryCol}>
+              <h1 style={styles.title}>{listing.name}</h1>
+              <div style={styles.categoryBox}>{listing.category}</div>
+            </div>
             <div style={styles.priceBox}>{priceLabel}</div>
           </div>
-
-          {/* Category */}
-          <div style={styles.categoryBox}>{listing.category}</div>
 
           {/* Description */}
           <div style={styles.descriptionBox}>
@@ -163,6 +180,16 @@ export default function ViewListing() {
               <p style={styles.creatorName}>{listing.seller}</p>
             </div>
           </div>
+
+          {/* Message seller */}
+          <button style={styles.messageBtn}>
+            Message seller to purchase
+          </button>
+
+          {/* Sell your own */}
+          <button style={styles.sellBtn} onClick={() => navigateTo("/createlisting")}>
+            Have an item like this? Sell your own!
+          </button>
 
         </div>
       </div>
@@ -262,10 +289,15 @@ const styles = {
   dotActive: {
     backgroundColor: "#fff",
   },
-  heartBtn: {
+  imageBtnStack: {
     position: "absolute",
     bottom: "10px",
     right: "10px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "6px",
+  },
+  imageActionBtn: {
     background: "rgba(255,255,255,0.85)",
     border: "none",
     cursor: "pointer",
@@ -320,10 +352,15 @@ const styles = {
   titlePriceRow: {
     display: "flex",
     gap: "16px",
-    alignItems: "flex-start",
+    alignItems: "stretch",
+  },
+  titleCategoryCol: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px",
   },
   title: {
-    flex: 1,
     margin: 0,
     fontSize: "22px",
     fontWeight: "800",
@@ -336,7 +373,7 @@ const styles = {
   },
   priceBox: {
     flexShrink: 0,
-    fontSize: "18px",
+    fontSize: "36px",
     fontWeight: "800",
     color: "#111",
     border: "1.5px solid #000",
@@ -345,6 +382,9 @@ const styles = {
     backgroundColor: "#fff",
     whiteSpace: "nowrap",
     fontFamily: "'Pally', sans-serif",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
   categoryBox: {
     fontSize: "14px",
@@ -397,6 +437,31 @@ const styles = {
     borderRadius: "8px",
     padding: "12px 16px",
     backgroundColor: "#fff",
+  },
+  messageBtn: {
+    padding: "14px 20px",
+    backgroundColor: "#941b32",
+    color: "#fff",
+    border: "1.5px solid #000",
+    borderRadius: "8px",
+    fontSize: "30px",
+    fontWeight: "700",
+    fontFamily: "'Pally', sans-serif",
+    cursor: "pointer",
+    width: "100%",
+  },
+  sellBtn: {
+    padding: "10px 20px",
+    backgroundColor: "#f39836",
+    color: "#fff",
+    border: "1.5px solid #000",
+    borderRadius: "8px",
+    fontSize: "22px",
+    fontWeight: "700",
+    fontFamily: "'Pally', sans-serif",
+    cursor: "pointer",
+    width: "95%",
+    alignSelf: "center",
   },
   creatorLabel: {
     margin: "0 0 4px",
