@@ -34,20 +34,32 @@ export default function LoginPrompt() {
             return;
         }
 
-        if (mode === "signup") { 
-            const { error } = await supabase.auth.signUp({ email, password});
+        if (mode === "signup") {
+            const { data, error } = await supabase.auth.signUp({ email, password});
             if (error) {
                 setMessage({ type: "error", text: error.message});
-            } 
+            }
+            // Supabase returns a user with no identities if the email already exists
+            else if (data?.user?.identities?.length === 0) {
+                // Try logging them in with the password they provided
+                const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+                if (loginError) {
+                    // Wrong password — send them to login page
+                    setMode("login");
+                    setMessage({ type: "error", text: "Account already exists, please log in."});
+                } else {
+                    navigate("/");
+                }
+            }
             else {
                 setMessage( { type: "success", text: "Check your email to confirm your account."});
             }
-        } 
+        }
         else {
             const { error } = await supabase.auth.signInWithPassword({ email, password });
             if (error) {
                 setMessage({ type: "error", text: error.message});
-            } 
+            }
             else {
                 navigate("/");
             }

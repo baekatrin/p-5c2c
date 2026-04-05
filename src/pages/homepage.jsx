@@ -120,7 +120,7 @@ function Navbar({ navigate }) {
         </button>
 
         {/* User avatar → sign up / profile page */}
-        <button style={styles.avatarBtn} onClick={() => navigate("/dbtest")} title="Sign Up / Profile">
+        <button style={styles.avatarBtn} onClick={() => navigate("/profile")} title="Profile">
           <div style={styles.avatarCircle}>
             <span style={styles.avatarInitials}>U</span>
           </div>

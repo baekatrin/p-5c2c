@@ -5,7 +5,6 @@ import { supabase } from '../supabaseClient';
 import './index.css'
 import HomePage from "./homepage";
 import CreateListing from "./createlisting";
-import Dbtest from "./dbtest";
 import ViewListing from "./viewlisting";
 import LoginPrompt from "./loginprompt";
 import ProfileSetup from './profilesetup';
@@ -66,7 +65,6 @@ export function App() {
           <>
             <Route path="/" element={<HomePage />} />
             <Route path="/createlisting" element={<CreateListing />} />
-            <Route path="/dbtest" element={<Dbtest />} />
             <Route path="/product/:id" element={<ViewListing />} />
             <Route path="*" element={<Navigate to="/" />} />
           </>
