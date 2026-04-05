@@ -1,20 +1,76 @@
-import { StrictMode } from 'react'
+import { StrictMode, useState, useEffect, useCallback } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Routes, Route } from "react-router-dom"
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
+import { supabase } from '../supabaseClient';
 import './index.css'
 import HomePage from "./homepage";
 import CreateListing from "./createlisting";
 import Dbtest from "./dbtest";
 import ViewListing from "./viewlisting";
+import LoginPrompt from "./loginprompt";
+import ProfileSetup from './profilesetup';
 
 export function App() {
+  const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState(null);
+  const [hasProfile, setHasProfile] = useState(false);
+
+  const checkProfile = useCallback(async (session) => {
+    if (!session) {
+      setHasProfile(false);
+      return;
+    }
+    const { data } = await supabase
+      .from("User")
+      .select("id")
+      .eq("id", session.user.id)
+      .single();
+    setHasProfile(!!data);
+  }, []);
+
+  useEffect(() => {
+    // Check initial session
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      setSession(session);
+      await checkProfile(session);
+      setLoading(false);
+    });
+
+    // Listen for auth changes (login, logout, token refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        setSession(session);
+        await checkProfile(session);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, [checkProfile]);
+
+  if (loading) return <p>Loading...</p>;
+
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/"                element={<HomePage />} />
-        <Route path="/createlisting"  element={<CreateListing />} />
-        <Route path="/dbtest"         element={<Dbtest />} />
-        <Route path="/product/:id"    element={<ViewListing />} />
+        {!session ? (
+          <>
+            <Route path="/login" element={<LoginPrompt />} />
+            <Route path="*" element={<Navigate to="/login" />} />
+          </>
+        ) : !hasProfile ? (
+          <>
+            <Route path="/profile-setup" element={<ProfileSetup onProfileCreated={() => checkProfile(session)} />} />
+            <Route path="*" element={<Navigate to="/profile-setup" />} />
+          </>
+        ) : (
+          <>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/createlisting" element={<CreateListing />} />
+            <Route path="/dbtest" element={<Dbtest />} />
+            <Route path="/product/:id" element={<ViewListing />} />
+            <Route path="*" element={<Navigate to="/" />} />
+          </>
+        )}
       </Routes>
     </BrowserRouter>
   );
