@@ -1,4 +1,6 @@
 import React, { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../supabaseClient";
 
 const CATEGORIES = [
   { id: "beauty", label: "Beauty & Cosmetics" },
@@ -37,6 +39,7 @@ const PRICING_TIERS = {
 };
 
 export default function CreateListing() {
+  const navigate = useNavigate();
   const [category, setCategory] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -45,6 +48,9 @@ export default function CreateListing() {
   const [maxPrice, setMaxPrice] = useState("");
   const [pricingNote, setPricingNote] = useState("");
   const [images, setImages] = useState([]);
+  const [imageFiles, setImageFiles] = useState([]);
+  const [publishing, setPublishing] = useState(false);
+  const [error, setError] = useState("");
   const fileInputRef = useRef(null);
 
   const placeholder =
@@ -64,15 +70,58 @@ export default function CreateListing() {
       name: file.name,
     }));
     setImages((prev) => [...prev, ...previews].slice(0, 6));
+    setImageFiles((prev) => [...prev, ...files].slice(0, 6));
   };
 
   const removeImage = (index) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handlePublish = (e) => {
+  const handlePublish = async (e) => {
     e.preventDefault();
-    // TODO: submit to Supabase, then redirect
+    setPublishing(true);
+    setError("");
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    // Upload images to Supabase Storage
+    const imageUrls = [];
+    for (const file of imageFiles) {
+      const ext = file.name.split(".").pop();
+      const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("listing-images")
+        .upload(path, file);
+      if (uploadError) {
+        setError("Image upload failed: " + uploadError.message);
+        setPublishing(false);
+        return;
+      }
+      const { data: { publicUrl } } = supabase.storage
+        .from("listing-images")
+        .getPublicUrl(path);
+      imageUrls.push(publicUrl);
+    }
+
+    // Insert listing into database
+    const { error: insertError } = await supabase.from("listings").insert({
+      seller_id: user.id,
+      title,
+      description,
+      category,
+      price_min: parseFloat(basePrice),
+      price_max: maxPrice ? parseFloat(maxPrice) : null,
+      pricing_note: pricingNote || null,
+      images: imageUrls,
+    });
+
+    if (insertError) {
+      setError("Failed to publish: " + insertError.message);
+      setPublishing(false);
+      return;
+    }
+
+    navigate("/");
   };
 
 
@@ -274,17 +323,18 @@ export default function CreateListing() {
 
         {/* Publish */}
         <div style={styles.publishRow}>
+          {error && <p style={{ color: "red", margin: 0, fontSize: "14px" }}>{error}</p>}
           <button
             type="submit"
             style={{
               ...styles.publishBtn,
-              ...(!category || !title || !description || !basePrice
+              ...(!category || !title || !description || !basePrice || publishing
                 ? styles.publishBtnDisabled
                 : {}),
             }}
-            disabled={!category || !title || !description || !basePrice}
+            disabled={!category || !title || !description || !basePrice || publishing}
           >
-            Publish Listing →
+            {publishing ? "Publishing..." : "Publish Listing →"}
           </button>
           {(!category || !title || !description || !basePrice) && (
             <p style={styles.publishHint}>

@@ -13,21 +13,8 @@
  */
 
 import { useState } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "../supabaseClient";
 import "./dbtest.css";
-
-// ---------------------------------------------------------------------------
-// Supabase client
-// ---------------------------------------------------------------------------
-// Use either VITE_SUPABASE_ANON_KEY or VITE_SUPABASE_PUBLISHABLE_KEY (same key).
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey =
-  import.meta.env.VITE_SUPABASE_ANON_KEY ||
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-const supabase =
-  supabaseUrl && supabaseKey
-    ? createClient(supabaseUrl, supabaseKey)
-    : null;
 
 // ---------------------------------------------------------------------------
 // Table name in your Supabase project

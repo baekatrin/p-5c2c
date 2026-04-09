@@ -1,4 +1,4 @@
-import { StrictMode, useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 import { supabase } from '../supabaseClient';
@@ -28,14 +28,18 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    // Check initial session
+    const timeout = setTimeout(() => setLoading(false), 3000);
+
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      clearTimeout(timeout);
       setSession(session);
       await checkProfile(session);
       setLoading(false);
+    }).catch(() => {
+      clearTimeout(timeout);
+      setLoading(false);
     });
 
-    // Listen for auth changes (login, logout, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         setSession(session);
@@ -43,7 +47,10 @@ export function App() {
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, [checkProfile]);
 
   if (loading) return <p>Loading...</p>;
@@ -75,7 +82,5 @@ export function App() {
 }
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
+  <App />
 )

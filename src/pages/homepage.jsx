@@ -16,24 +16,21 @@
  * directly to a <Route path="some-page"> you'd add later.
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/logo3.png";
 import Card from "./card";
+import { supabase } from "../supabaseClient";
 
-
-// ─── PLACEHOLDER PRODUCT DATA ──────────────────────────────────────────────
-// In a real app, this would be fetched from a backend/database.
-// Each product has a unique `id` used to navigate to its own page.
-const PRODUCTS = [
-  { id: 1, name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 100,  aspectRatio: "3/2" },
-  { id: 2, name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 150, aspectRatio: "1/2" },
-  { id: 3, name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 100, aspectRatio: "4/5" },
-  { id: 4, name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 200, aspectRatio: "2/3" },
-  { id: 5, name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 100, aspectRatio: "1/3" },
-  { id: 6, name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 100, aspectRatio: "3/2" },
-  { id: 7, name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 150, aspectRatio: "2/5" },
-  { id: 8, name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 100, aspectRatio: "4/3" },
+const DUMMY_LISTINGS = [
+  { id: "d1", name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 100,  aspectRatio: "3/2" },
+  { id: "d2", name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 150, aspectRatio: "1/2" },
+  { id: "d3", name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 100, aspectRatio: "4/5" },
+  { id: "d4", name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 200, aspectRatio: "2/3" },
+  { id: "d5", name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 100, aspectRatio: "1/3" },
+  { id: "d6", name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 100, aspectRatio: "3/2" },
+  { id: "d7", name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 150, aspectRatio: "2/5" },
+  { id: "d8", name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 100, aspectRatio: "4/3" },
 ];
 
 // ─── SVG ICONS ────────────────────────────────────────────────────────────
@@ -136,9 +133,34 @@ function Navbar({ navigate }) {
  * ProductGrid — lays out all ProductCards in a responsive 4-column grid.
  */
 function ProductGrid({ navigate }) {
+  const [listings, setListings] = useState([]);
+
+  useEffect(() => {
+    supabase
+      .from("listings")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        if (data) setListings(data);
+      });
+  }, []);
+
+  const allListings = [
+    ...listings.map((l) => ({
+      id: l.id,
+      name: l.title,
+      seller: l.seller_id,
+      images: l.images,
+      description: l.description,
+      priceMin: l.price_min,
+      priceMax: l.price_max,
+    })),
+    ...DUMMY_LISTINGS,
+  ];
+
   const columns = [[], [], [], []];
-  PRODUCTS.forEach((product, index) => {
-    columns[index % 4].push({ product, index });
+  allListings.forEach((listing, index) => {
+    columns[index % 4].push(listing);
   });
 
   return (
@@ -146,12 +168,12 @@ function ProductGrid({ navigate }) {
       <div style={styles.grid}>
         {columns.map((col, colIndex) => (
           <div key={colIndex} style={styles.column}>
-            {col.map(({ product }) => (
+            {col.map((listing) => (
               <Card
-                key={product.id}
-                listing={product}
-                onClick={() => navigate(`/product/${product.id}`)}
-                aspectRatio={product.aspectRatio}
+                key={listing.id}
+                listing={listing}
+                onClick={() => navigate(`/product/${listing.id}`)}
+                aspectRatio={listing.aspectRatio}
               />
             ))}
           </div>
