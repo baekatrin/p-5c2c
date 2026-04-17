@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 
 // Claremont colleges domain names for students 
@@ -11,123 +10,126 @@ const ALLOWED_DOMAINS = [
     "students.pitzer.edu",
 ]
 
-export default function LoginPrompt() {
-    const navigate = useNavigate();
-    const [mode, setMode] = useState("signup"); // "signup" or "login"
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+export default function LoginPrompt({ emailError }) {
     const [isLoading, setIsLoading] = useState(false);
-    const [message, setMessage] = useState( { type: "", text: ""});
-    const [is5CStudent, setIs5CStudent] = useState(null);
+    const [message, setMessage] = useState({ type: "", text: "" });
 
-    const handleSubmit = async (e) => {
-        // Stops form from doing a full page reload
-        e.preventDefault();
+    const handleGoogleSignIn = async () => {
         setIsLoading(true);
-        setMessage( { type: "", text: ""});
+        setMessage({ type: "", text: "" });
 
-        // Checks email domain belongs to 5C student
-        const domain = email.split("@")[1]; 
-        if (!ALLOWED_DOMAINS.includes(domain)) {
-            setMessage( { type: "error", text: "Please use your 5C student email."});
-            setIsLoading(false);
-            return;
-        }
-
-        if (mode === "signup") {
-            const { data, error } = await supabase.auth.signUp({ email, password});
-            if (error) {
-                setMessage({ type: "error", text: error.message});
-            }
-            // Supabase returns a user with no identities if the email already exists
-            else if (data?.user?.identities?.length === 0) {
-                // Try logging them in with the password they provided
-                const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
-                if (loginError) {
-                    // Wrong password — send them to login page
-                    setMode("login");
-                    setMessage({ type: "error", text: "Account already exists, please log in."});
-                } else {
-                    navigate("/");
+        try {
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: window.location.origin + '/',
                 }
-            }
-            else {
-                setMessage( { type: "success", text: "Check your email to confirm your account."});
-            }
-        }
-        else {
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
+            });
+
             if (error) {
-                setMessage({ type: "error", text: error.message});
+                setMessage({ type: "error", text: error.message });
             }
-            else {
-                navigate("/");
-            }
+        } catch (err) {
+            setMessage({ type: "error", text: "Failed to sign in with Google" });
+        } finally {
+            setIsLoading(false);
         }
-        setIsLoading(false);
     }
 
-    return ( 
-        <div>
-            {is5CStudent === null && (
-                <div>
-                    <h2>Are you a 5C student?</h2>
-                    <button onClick={() => setIs5CStudent(true)}>Yes</button>
-                    <button onClick={() => setIs5CStudent(false)}>No</button>
-                </div>
-            )}
+    return (
+        <div style={styles.container}>
+            <div style={styles.card}>
+                <h1 style={styles.title}>5C2C Marketplace</h1>
+                <p style={styles.subtitle}>For Claremont Colleges Students Only</p>
 
-            {is5CStudent === false && (
-                <div> 
-                    <h2>Sorry, this platform is only for 5C students.</h2>
-                    <p>cat picture here</p>
-                    <button onClick={() => setIs5CStudent(null)}>Go back</button>
-                </div>
-            )}
+                {emailError && (
+                    <p style={{
+                        color: "#ef4444",
+                        fontSize: "14px",
+                        marginBottom: "20px",
+                        padding: "12px",
+                        backgroundColor: "#fee2e2",
+                        borderRadius: "8px",
+                    }}>
+                        {emailError}
+                    </p>
+                )}
 
-            {is5CStudent === true && (
-            <div>
-                <h2>{mode === "signup" ? "Sign Up" : "Log In"}</h2>
+                <button 
+                    onClick={handleGoogleSignIn} 
+                    disabled={isLoading}
+                    style={styles.googleButton}
+                >
+                    {isLoading ? "Signing in..." : "Sign in with Google"}
+                </button>
 
-                <form onSubmit={handleSubmit}>
-                      <input
-                          type="email"
-                          placeholder="Your 5C email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          required
-                      />
+                {message.text && (
+                    <p style={{
+                        color: message.type === "error" ? "#ef4444" : "#22c55e",
+                        marginTop: "16px",
+                        fontSize: "14px"
+                    }}>
+                        {message.text}
+                    </p>
+                )}
 
-                      <input
-                          type="password"
-                          placeholder="Password"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          required
-                      />
-                      <button type="submit" disabled={isLoading}> 
-                          {isLoading ? "Loading..." : mode === "signup" ? "Sign Up" : "Log In"}
-                      </button>
-                  </form>
-
-                     {message.text && (
-                      <p style={{ color: message.type === "error" ? "red" : "green" }}>
-                          {message.text}
-                      </p>
-                    )}
-
-                    <p>
-                      {mode === "signup" ? "Already have an account? " : "Don't have an account? "}
-                      <button onClick={() => setMode(mode === "signup" ? "login" : "signup")}>
-                          {mode === "signup" ? "Log in" : "Sign up"}
-                      </button>
-                  </p>
-              </div>
-          )}
+                <p style={styles.disclaimer}>
+                    You must use your 5C student email to sign in.
+                </p>
+            </div>
         </div>
     )
+}
 
-
+const styles = {
+    container: {
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        minHeight: "100vh",
+        backgroundColor: "#f3f4f6",
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    },
+    card: {
+        backgroundColor: "white",
+        padding: "40px",
+        borderRadius: "12px",
+        boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+        textAlign: "center",
+        maxWidth: "400px",
+        width: "100%",
+    },
+    title: {
+        margin: "0 0 8px 0",
+        fontSize: "28px",
+        fontWeight: "600",
+        color: "#1f2937",
+    },
+    subtitle: {
+        margin: "0 0 32px 0",
+        fontSize: "14px",
+        color: "#6b7280",
+    },
+    googleButton: {
+        width: "100%",
+        padding: "12px 16px",
+        fontSize: "16px",
+        fontWeight: "500",
+        backgroundColor: "#fff",
+        border: "1px solid #d1d5db",
+        borderRadius: "8px",
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "8px",
+        transition: "all 0.2s",
+    },
+    disclaimer: {
+        marginTop: "24px",
+        fontSize: "12px",
+        color: "#9ca3af",
+    }
 }
 
 

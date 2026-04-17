@@ -57,11 +57,11 @@ const InboxIcon = () => (
  *
  * Props:
  *  navigate(pageName) — call this to switch pages.
- *                        pageName can be: "home", "createlisting",
- *                        "favorites", "checkout", "messages", "profile"
+ *  onLogout() — call this to log out the user.
  */
-function Navbar({ navigate }) {
+function Navbar({ navigate, onLogout }) {
   const [searchValue, setSearchValue] = useState("");
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   function handleSearch(e) {
     // Prevent the page from refreshing when user hits Enter
@@ -69,6 +69,11 @@ function Navbar({ navigate }) {
     // TODO: wire this up to a real search results page
     console.log("Searching for:", searchValue);
   }
+
+  const handleLogout = async () => {
+    setShowProfileMenu(false);
+    await onLogout();
+  };
 
   return (
     <nav style={styles.navbar}>
@@ -116,12 +121,38 @@ function Navbar({ navigate }) {
           <InboxIcon />
         </button>
 
-        {/* User avatar → sign up / profile page */}
-        <button style={styles.avatarBtn} onClick={() => navigate("/profile")} title="Profile">
-          <div style={styles.avatarCircle}>
-            <span style={styles.avatarInitials}>U</span>
-          </div>
-        </button>
+        {/* User avatar → profile dropdown menu */}
+        <div style={styles.profileMenuContainer}>
+          <button 
+            style={styles.avatarBtn} 
+            onClick={() => setShowProfileMenu(!showProfileMenu)}
+            title="Profile"
+          >
+            <div style={styles.avatarCircle}>
+              <span style={styles.avatarInitials}>U</span>
+            </div>
+          </button>
+
+          {showProfileMenu && (
+            <div style={styles.profileDropdown}>
+              <button 
+                style={styles.dropdownBtn}
+                onClick={() => {
+                  setShowProfileMenu(false);
+                  navigate("/profile");
+                }}
+              >
+                See Profile
+              </button>
+              <button 
+                style={{...styles.dropdownBtn, ...styles.dropdownBtnDanger}}
+                onClick={handleLogout}
+              >
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
 
       </div>
     </nav>
@@ -208,6 +239,11 @@ function ProductGrid({ navigate }) {
 export default function HomePage() {   // ← also capitalize: HomePage not homepage
   const navigateTo = useNavigate();
 
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    navigateTo("/login");
+  }
+
   function navigate(path) {
     window.scrollTo({ top: 0, behavior: "smooth" });
     navigateTo(path);
@@ -215,7 +251,7 @@ export default function HomePage() {   // ← also capitalize: HomePage not home
 
   return (
     <div style={styles.appShell}>
-      <Navbar navigate={navigate} />
+      <Navbar navigate={navigate} onLogout={handleLogout} />
       <ProductGrid navigate={navigate} />
     </div>
   );
@@ -438,5 +474,40 @@ const styles = {
     fontSize: "16px",
     color: "#777",
     margin: 0,
+  },
+
+  // ── Profile Menu Dropdown
+  profileMenuContainer: {
+    position: "relative",
+  },
+  profileDropdown: {
+    position: "absolute",
+    top: "100%",
+    right: 0,
+    marginTop: "8px",
+    backgroundColor: "#ffffff",
+    border: "1px solid #e8e8e8",
+    borderRadius: "8px",
+    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+    zIndex: 1000,
+    minWidth: "160px",
+    overflow: "hidden",
+  },
+  dropdownBtn: {
+    display: "block",
+    width: "100%",
+    padding: "12px 16px",
+    border: "none",
+    backgroundColor: "transparent",
+    textAlign: "left",
+    fontSize: "14px",
+    cursor: "pointer",
+    transition: "background-color 0.2s",
+    color: "#333",
+    fontWeight: "500",
+  },
+  dropdownBtnDanger: {
+    color: "#ef4444",
+    borderTop: "1px solid #e8e8e8",
   },
 };

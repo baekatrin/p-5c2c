@@ -9,49 +9,91 @@ import ViewListing from "./viewlisting";
 import LoginPrompt from "./loginprompt";
 import ProfileSetup from './profilesetup';
 
+const ALLOWED_DOMAINS = [
+    "g.hmc.edu", 
+    "mymail.pomona.edu",
+    "cmc.edu",
+    "students.scrippscollege.edu", 
+    "students.pitzer.edu",
+]
+
 export function App() {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState(null);
   const [hasProfile, setHasProfile] = useState(false);
+  const [emailError, setEmailError] = useState(null);
 
   const checkProfile = useCallback(async (session) => {
     if (!session) {
       setHasProfile(false);
       return;
     }
-    const { data } = await supabase
-      .from("User")
-      .select("id")
-      .eq("id", session.user.id)
-      .single();
-    setHasProfile(!!data);
+    
+    try {
+      const { data, error } = await supabase
+        .from("User")
+        .select("id")
+        .eq("id", session.user.id)
+        .single();
+      
+      if (error) {
+        setHasProfile(false);
+      } else {
+        setHasProfile(true);
+      }
+    } catch (err) {
+      setHasProfile(false);
+    }
+  }, []);
+
+  const validateEmailDomain = useCallback((session) => {
+    if (!session?.user?.email) return false;
+    
+    const domain = session.user.email.split("@")[1];
+    const isValid = ALLOWED_DOMAINS.includes(domain);
+    
+    if (!isValid) {
+      setEmailError("You must use a 5C student email to access this platform.");
+      // Sign out user with invalid email
+      supabase.auth.signOut();
+    } else {
+      setEmailError(null);
+    }
+    
+    return isValid;
   }, []);
 
   useEffect(() => {
-    const timeout = setTimeout(() => setLoading(false), 3000);
-
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      clearTimeout(timeout);
+      if (session && !validateEmailDomain(session)) {
+        setSession(null);
+        setLoading(false);
+        return;
+      }
+      
       setSession(session);
       await checkProfile(session);
       setLoading(false);
-    }).catch(() => {
-      clearTimeout(timeout);
+    }).catch((err) => {
       setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
+        if (session && !validateEmailDomain(session)) {
+          setSession(null);
+          return;
+        }
+        
         setSession(session);
         await checkProfile(session);
       }
     );
 
     return () => {
-      clearTimeout(timeout);
       subscription.unsubscribe();
     };
-  }, [checkProfile]);
+  }, [checkProfile, validateEmailDomain]);
 
   if (loading) return <p>Loading...</p>;
 
@@ -60,7 +102,7 @@ export function App() {
       <Routes>
         {!session ? (
           <>
-            <Route path="/login" element={<LoginPrompt />} />
+            <Route path="/login" element={<LoginPrompt emailError={emailError} />} />
             <Route path="*" element={<Navigate to="/login" />} />
           </>
         ) : !hasProfile ? (
