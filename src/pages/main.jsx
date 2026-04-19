@@ -8,6 +8,7 @@ import CreateListing from "./createlisting";
 import ViewListing from "./viewlisting";
 import LoginPrompt from "./loginprompt";
 import ProfileSetup from './profilesetup';
+import Favorites from "./favorites";
 
 const ALLOWED_DOMAINS = [
     "g.hmc.edu", 
@@ -113,6 +114,7 @@ export function App() {
         ) : (
           <>
             <Route path="/" element={<HomePage />} />
+            <Route path="/favorites" element={<Favorites />} />
             <Route path="/createlisting" element={<CreateListing />} />
             <Route path="/product/:id" element={<ViewListing />} />
             <Route path="*" element={<Navigate to="/" />} />

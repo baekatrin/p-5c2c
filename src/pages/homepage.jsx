@@ -16,7 +16,7 @@
  * directly to a <Route path="some-page"> you'd add later.
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/logo3.png";
 import Card from "./card";
@@ -32,6 +32,10 @@ const DUMMY_LISTINGS = [
   { id: "d7", name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 150, aspectRatio: "2/5" },
   { id: "d8", name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 100, aspectRatio: "4/3" },
 ];
+
+function isUuidLike(id) {
+  return typeof id === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+}
 
 // ─── SVG ICONS ────────────────────────────────────────────────────────────
 // Clean inline SVG icons so we don't need an icon library dependency.
@@ -80,7 +84,7 @@ function Navbar({ navigate, onLogout }) {
       {/* ── LOGO ── clicking it returns you to the homepage */}
       <button
         style={styles.logo}
-        onClick={() => navigate("home")}
+        onClick={() => navigate("/")}
         title="Go to homepage"
       >
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -165,6 +169,29 @@ function Navbar({ navigate, onLogout }) {
  */
 function ProductGrid({ navigate }) {
   const [listings, setListings] = useState([]);
+  const [favoritedIds, setFavoritedIds] = useState(() => new Set());
+
+  const loadFavorites = useCallback(async () => {
+    const { data: auth } = await supabase.auth.getUser();
+    const userId = auth.user?.id;
+    if (!userId) {
+      setFavoritedIds(new Set());
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("favorites")
+      .select("serviceID")
+      .eq("userID", userId);
+
+    if (error) {
+      console.error("Failed to load favorites:", error.message);
+      setFavoritedIds(new Set());
+      return;
+    }
+
+    setFavoritedIds(new Set((data || []).map((r) => r.serviceID).filter(Boolean)));
+  }, []);
 
   useEffect(() => {
     supabase
@@ -175,6 +202,50 @@ function ProductGrid({ navigate }) {
         if (data) setListings(data);
       });
   }, []);
+
+  useEffect(() => {
+    loadFavorites();
+  }, [loadFavorites]);
+
+  const toggleFavorite = useCallback(
+    async (serviceId) => {
+      const { data: auth } = await supabase.auth.getUser();
+      const userId = auth.user?.id;
+      if (!userId) return { ok: false, action: "none" };
+
+      const next = new Set(favoritedIds);
+      const isFav = next.has(serviceId);
+
+      if (isFav) {
+        const { error } = await supabase
+          .from("favorites")
+          .delete()
+          .eq("userID", userId)
+          .eq("serviceID", serviceId);
+
+        if (error) {
+          console.error("Failed to remove favorite:", error.message);
+          return { ok: false, action: "none" };
+        }
+        next.delete(serviceId);
+      } else {
+        const { error } = await supabase.from("favorites").insert({
+          userID: userId,
+          serviceID: serviceId,
+        });
+
+        if (error) {
+          console.error("Failed to add favorite:", error.message);
+          return { ok: false, action: "none" };
+        }
+        next.add(serviceId);
+      }
+
+      setFavoritedIds(next);
+      return { ok: true, action: isFav ? "removed" : "added" };
+    },
+    [favoritedIds]
+  );
 
   const allListings = [
     ...listings.map((l) => ({
@@ -203,6 +274,15 @@ function ProductGrid({ navigate }) {
               <Card
                 key={listing.id}
                 listing={listing}
+                isFavorited={isUuidLike(listing.id) && favoritedIds.has(listing.id)}
+                onFavoriteToggle={
+                  isUuidLike(listing.id)
+                    ? async () => {
+                        const { ok, action } = await toggleFavorite(listing.id);
+                        if (ok && action === "added") navigate("/favorites");
+                      }
+                    : undefined
+                }
                 onClick={() => navigate(`/product/${listing.id}`)}
                 aspectRatio={listing.aspectRatio}
               />

@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { supabase } from "../supabaseClient";
 
 // Placeholder sub-images — 5 colored blocks to simulate a real image gallery
 const PLACEHOLDER_IMAGES = [
@@ -8,17 +9,6 @@ const PLACEHOLDER_IMAGES = [
   { color: "#b0d4b8", label: "3" },
   { color: "#d4b0b0", label: "4" },
   { color: "#d4d0b0", label: "5" },
-];
-
-const PRODUCTS = [
-  { id: 1, name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 100,  category: "Category" },
-  { id: 2, name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 150, category: "Category" },
-  { id: 3, name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 100, category: "Category" },
-  { id: 4, name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 200, category: "Category" },
-  { id: 5, name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 100, category: "Category" },
-  { id: 6, name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 100, category: "Category" },
-  { id: 7, name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 150, category: "Category" },
-  { id: 8, name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 100, category: "Category" },
 ];
 
 const HeartIcon = ({ filled }) => (
@@ -46,17 +36,109 @@ export default function ViewListing() {
   const navigateTo = useNavigate();
   const [favorited, setFavorited] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [listing, setListing] = useState(null);
+  const [sellerName, setSellerName] = useState("Shop Name");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [brokenImageIndexes, setBrokenImageIndexes] = useState([]);
 
-  const listing = PRODUCTS.find((p) => p.id === parseInt(id)) || PRODUCTS[0];
+  useEffect(() => {
+    let isMounted = true;
+    console.log("Looking up listing id:", id);
+    async function loadListingData() {
+      setLoading(true);
+      setError("");
+      setActiveIndex(0);
+      setBrokenImageIndexes([]);
 
-  // Use real images if available, otherwise fall back to placeholders
-  const hasRealImages = listing.images && listing.images.length > 0;
-  const images = hasRealImages ? listing.images : PLACEHOLDER_IMAGES;
+      const { data: listingData, error: listingError } = await supabase
+        .from("listings")
+        .select("id, seller_id, title, description, category, price_min, price_max, pricing_note, images")
+        .eq("id", id)
+        .single();
 
-  const priceLabel =
-    listing.priceMin === listing.priceMax
-      ? `$${listing.priceMin}`
-      : `$${listing.priceMin} – $${listing.priceMax}`;
+      if (listingError) {
+        if (!isMounted) return;
+        setListing(null);
+        setError("Could not load this listing.");
+        setLoading(false);
+        return;
+      }
+
+      if (!isMounted) return;
+      setListing(listingData);
+
+      if (!listingData?.seller_id) {
+        setSellerName("Unknown seller");
+        setLoading(false);
+        return;
+      }
+
+      const { data: sellerData, error: sellerError } = await supabase
+        .from("User")
+        .select("username, firstName, lastName")
+        .eq("id", listingData.seller_id)
+        .single();
+
+      if (!isMounted) return;
+
+      if (sellerError) {
+        setSellerName(listingData.seller_id || "Unknown seller");
+        setLoading(false);
+        return;
+      }
+
+      const fullName = [sellerData?.firstName, sellerData?.lastName]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+      setSellerName(fullName || sellerData?.username || "Unknown seller");
+      setLoading(false);
+    }
+
+    loadListingData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
+
+  // Temporarily disable real image loading so text fields can be validated without image 404s.
+  const hasRealImages = false;
+  const images = PLACEHOLDER_IMAGES;
+
+  const priceLabel = useMemo(() => {
+    const min = listing?.price_min;
+    const max = listing?.price_max;
+
+    if (min == null && max == null) return "Price TBD";
+    if (max == null || min === max) return `$${min}`;
+    return `$${min} – $${max}`;
+  }, [listing?.price_min, listing?.price_max]);
+
+  if (loading) {
+    return (
+      <div style={styles.page}>
+        <button style={styles.backBtn} onClick={() => navigateTo(-1)}>
+          <BackIcon />
+          Back
+        </button>
+        <p style={styles.statusText}>Loading listing...</p>
+      </div>
+    );
+  }
+
+  if (error || !listing) {
+    return (
+      <div style={styles.page}>
+        <button style={styles.backBtn} onClick={() => navigateTo(-1)}>
+          <BackIcon />
+          Back
+        </button>
+        <p style={styles.errorText}>{error || "Listing not found."}</p>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.page}>
@@ -75,7 +157,22 @@ export default function ViewListing() {
           {/* Main image */}
           <div style={styles.imageBox}>
             {hasRealImages ? (
-              <img src={images[activeIndex]} alt={listing.name} style={styles.image} />
+              brokenImageIndexes.includes(activeIndex) ? (
+                <div style={{ ...styles.placeholderSwatch, backgroundColor: "#d4c5b0" }}>
+                  <span style={styles.placeholderLabel}>Image unavailable</span>
+                </div>
+              ) : (
+                <img
+                  src={images[activeIndex]}
+                  alt={listing.title || "Listing image"}
+                  style={styles.image}
+                  onError={() =>
+                    setBrokenImageIndexes((prev) =>
+                      prev.includes(activeIndex) ? prev : [...prev, activeIndex]
+                    )
+                  }
+                />
+              )
             ) : (
               <div style={{ ...styles.placeholderSwatch, backgroundColor: images[activeIndex].color }}>
                 <span style={styles.placeholderLabel}>Image {images[activeIndex].label}</span>
@@ -141,7 +238,18 @@ export default function ViewListing() {
                 onClick={() => setActiveIndex(i)}
               >
                 {hasRealImages ? (
-                  <img src={img} alt={`${listing.name} ${i + 1}`} style={styles.thumbnailImg} />
+                  brokenImageIndexes.includes(i) ? (
+                    <span style={styles.thumbnailLabel}>X</span>
+                  ) : (
+                    <img
+                      src={img}
+                      alt={`${listing.title || "Listing"} ${i + 1}`}
+                      style={styles.thumbnailImg}
+                      onError={() =>
+                        setBrokenImageIndexes((prev) => (prev.includes(i) ? prev : [...prev, i]))
+                      }
+                    />
+                  )
                 ) : (
                   <span style={styles.thumbnailLabel}>{img.label}</span>
                 )}
@@ -157,27 +265,27 @@ export default function ViewListing() {
           {/* Title + Category + Price */}
           <div style={styles.titlePriceRow}>
             <div style={styles.titleCategoryCol}>
-              <h1 style={styles.title}>{listing.name}</h1>
-              <div style={styles.categoryBox}>{listing.category}</div>
+              <h1 style={styles.title}>{listing.title || "Untitled listing"}</h1>
+              <div style={styles.categoryBox}>{listing.category || "Category"}</div>
             </div>
             <div style={styles.priceBox}>{priceLabel}</div>
           </div>
 
           {/* Description */}
           <div style={styles.descriptionBox}>
-            <p style={styles.descriptionText}>{listing.description}</p>
+            <p style={styles.descriptionText}>{listing.description || "No description provided."}</p>
           </div>
 
           {/* About the Creator */}
           <div style={styles.creatorRow}>
             <div style={styles.creatorAvatar}>
               <span style={styles.creatorInitial}>
-                {listing.seller ? listing.seller[0] : "S"}
+                {sellerName ? sellerName[0].toUpperCase() : "S"}
               </span>
             </div>
             <div style={styles.creatorInfo}>
               <p style={styles.creatorLabel}>About the Creator</p>
-              <p style={styles.creatorName}>{listing.seller}</p>
+              <p style={styles.creatorName}>{sellerName}</p>
             </div>
           </div>
 
@@ -216,6 +324,18 @@ const styles = {
     color: "#333",
     padding: "8px 0",
     marginBottom: "24px",
+    fontFamily: "'Pally', sans-serif",
+  },
+  statusText: {
+    margin: 0,
+    fontSize: "16px",
+    color: "#333",
+    fontFamily: "'Pally', sans-serif",
+  },
+  errorText: {
+    margin: 0,
+    fontSize: "16px",
+    color: "#941b32",
     fontFamily: "'Pally', sans-serif",
   },
 
