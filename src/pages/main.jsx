@@ -10,10 +10,10 @@ import LoginPrompt from "./loginprompt";
 import ProfileSetup from './profilesetup';
 
 const ALLOWED_DOMAINS = [
-    "g.hmc.edu", 
+    "g.hmc.edu",
     "mymail.pomona.edu",
     "cmc.edu",
-    "students.scrippscollege.edu", 
+    "students.scrippscollege.edu",
     "students.pitzer.edu",
 ]
 
@@ -28,66 +28,68 @@ export function App() {
       setHasProfile(false);
       return;
     }
-    
+
     try {
       const { data, error } = await supabase
         .from("User")
         .select("id")
         .eq("id", session.user.id)
-        .single();
-      
+        .maybeSingle();
+
       if (error) {
-        setHasProfile(false);
-      } else {
-        setHasProfile(true);
+        if (error.message?.includes('AbortError') || error.name === 'AbortError') {
+          return;
+        }
+        console.error("Error checking profile:", error.message);
+        return;
       }
+
+      setHasProfile(data !== null);
     } catch (err) {
-      setHasProfile(false);
+      if (err.name === 'AbortError' || err.message?.includes('AbortError') || err.message?.includes('Lock broken')) {
+        return;
+      }
+      console.error("Unexpected error checking profile:", err);
     }
   }, []);
 
   const validateEmailDomain = useCallback((session) => {
-    if (!session?.user) return false;
+    if (!session?.user?.email) return false;
 
-    // Azure OAuth stores email in metadata — check all possible locations
-    const email =
-      session.user.email ||
-      session.user.user_metadata?.email ||
-      session.user.user_metadata?.preferred_username;
-
-    if (!email) {
-      setEmailError("Could not retrieve your email address.");
-      supabase.auth.signOut();
-      return false;
-    }
-
-    const domain = email.split("@")[1]?.toLowerCase();
+    const domain = session.user.email.split("@")[1]?.toLowerCase();
     const isValid = ALLOWED_DOMAINS.includes(domain);
-    
+
     if (!isValid) {
       setEmailError("You must use a 5C student email to access this platform.");
       supabase.auth.signOut();
     } else {
       setEmailError(null);
     }
-    
+
     return isValid;
   }, []);
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session && !validateEmailDomain(session)) {
-        setSession(null);
+    const initSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session && !validateEmailDomain(session)) {
+          setSession(null);
+          return;
+        }
+
+        setSession(session);
+        await checkProfile(session);
+      } catch (err) {
+        console.error("Error initializing session:", err);
+      } finally {
+        // Always runs — no more stuck loading screen
         setLoading(false);
-        return;
       }
-      
-      setSession(session);
-      await checkProfile(session);
-      setLoading(false);
-    }).catch((err) => {
-      setLoading(false);
-    });
+    };
+
+    initSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {

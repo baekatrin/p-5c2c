@@ -2,41 +2,76 @@ import { useState } from "react";
 import { supabase } from "../supabaseClient";
 
 const ALLOWED_DOMAINS = [
-    "g.hmc.edu", 
+    "g.hmc.edu",
     "mymail.pomona.edu",
     "cmc.edu",
-    "students.scrippscollege.edu", 
+    "students.scrippscollege.edu",
     "students.pitzer.edu",
 ]
 
 export default function LoginPrompt({ emailError }) {
-    const [loadingProvider, setLoadingProvider] = useState(null);
+    const [mode, setMode] = useState("signin"); // "signin" | "signup"
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState({ type: "", text: "" });
 
-    const handleSignIn = async (provider) => {
-        setLoadingProvider(provider);
+    const validateDomain = (email) => {
+        const domain = email.split("@")[1]?.toLowerCase();
+        return ALLOWED_DOMAINS.includes(domain);
+    };
+
+    const handleSubmit = async () => {
         setMessage({ type: "", text: "" });
 
-        try {
-            const options = {
-                redirectTo: window.location.origin + '/',
-            };
+        if (!email || !password) {
+            setMessage({ type: "error", text: "Please fill in all fields." });
+            return;
+        }
 
-            // Azure requires scopes to get the email back
-            if (provider === 'azure') {
-                options.scopes = 'email profile openid';
+        if (!validateDomain(email)) {
+            setMessage({ type: "error", text: "You must use a 5C student email to access this platform." });
+            return;
+        }
+
+        if (mode === "signup") {
+            if (password !== confirmPassword) {
+                setMessage({ type: "error", text: "Passwords do not match." });
+                return;
             }
+            if (password.length < 6) {
+                setMessage({ type: "error", text: "Password must be at least 6 characters." });
+                return;
+            }
+        }
 
-            const { error } = await supabase.auth.signInWithOAuth({ provider, options });
+        setIsLoading(true);
 
-            if (error) {
-                setMessage({ type: "error", text: error.message });
+        try {
+            if (mode === "signin") {
+                const { error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) setMessage({ type: "error", text: error.message });
+            } else {
+                const { error } = await supabase.auth.signUp({ email, password });
+                if (error) {
+                    setMessage({ type: "error", text: error.message });
+                } else {
+                    setMessage({ type: "success", text: "Account created! Check your email to confirm your account, then sign in." });
+                    setMode("signin");
+                    setPassword("");
+                    setConfirmPassword("");
+                }
             }
         } catch (err) {
-            setMessage({ type: "error", text: `Failed to sign in with ${provider}` });
+            setMessage({ type: "error", text: "Something went wrong. Please try again." });
         } finally {
-            setLoadingProvider(null);
+            setIsLoading(false);
         }
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === "Enter") handleSubmit();
     };
 
     return (
@@ -49,64 +84,76 @@ export default function LoginPrompt({ emailError }) {
                     <p style={styles.errorBanner}>{emailError}</p>
                 )}
 
-                <button
-                    onClick={() => handleSignIn('google')}
-                    disabled={loadingProvider !== null}
-                    style={styles.providerButton}
-                >
-                    <GoogleIcon />
-                    {loadingProvider === 'google' ? "Signing in..." : "Sign in with Google"}
-                </button>
+                <div style={styles.tabRow}>
+                    <button
+                        onClick={() => { setMode("signin"); setMessage({ type: "", text: "" }); }}
+                        style={{ ...styles.tab, ...(mode === "signin" ? styles.tabActive : {}) }}
+                    >
+                        Sign In
+                    </button>
+                    <button
+                        onClick={() => { setMode("signup"); setMessage({ type: "", text: "" }); }}
+                        style={{ ...styles.tab, ...(mode === "signup" ? styles.tabActive : {}) }}
+                    >
+                        Sign Up
+                    </button>
+                </div>
 
-                <button
-                    onClick={() => handleSignIn('azure')}
-                    disabled={loadingProvider !== null}
-                    style={styles.providerButton}
-                >
-                    <OutlookIcon />
-                    {loadingProvider === 'azure' ? "Signing in..." : "Sign in with Outlook"}
-                </button>
+                <input
+                    type="email"
+                    placeholder="your@g.hmc.edu"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    style={styles.input}
+                    disabled={isLoading}
+                />
+
+                <input
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    style={styles.input}
+                    disabled={isLoading}
+                />
+
+                {mode === "signup" && (
+                    <input
+                        type="password"
+                        placeholder="Confirm password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        style={styles.input}
+                        disabled={isLoading}
+                    />
+                )}
 
                 {message.text && (
                     <p style={{
-                        color: message.type === "error" ? "#ef4444" : "#22c55e",
-                        marginTop: "16px",
-                        fontSize: "14px"
+                        ...styles.messageBanner,
+                        backgroundColor: message.type === "error" ? "#fee2e2" : "#dcfce7",
+                        color: message.type === "error" ? "#ef4444" : "#16a34a",
                     }}>
                         {message.text}
                     </p>
                 )}
+
+                <button
+                    onClick={handleSubmit}
+                    disabled={isLoading}
+                    style={styles.submitButton}
+                >
+                    {isLoading ? "Please wait..." : mode === "signin" ? "Sign In" : "Create Account"}
+                </button>
 
                 <p style={styles.disclaimer}>
                     You must use your 5C student email to sign in.
                 </p>
             </div>
         </div>
-    );
-}
-
-function GoogleIcon() {
-    return (
-        <svg width="18" height="18" viewBox="0 0 18 18">
-            <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/>
-            <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/>
-            <path fill="#FBBC05" d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/>
-            <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z"/>
-        </svg>
-    );
-}
-
-function OutlookIcon() {
-    return (
-        <svg width="18" height="18" viewBox="0 0 18 18">
-            <rect width="10" height="10" x="8" y="0" fill="#0078d4" rx="1"/>
-            <rect width="4.5" height="4.5" x="8" y="0" fill="#50a8f0"/>
-            <rect width="4.5" height="4.5" x="13.5" y="0" fill="#1a8fe3"/>
-            <rect width="4.5" height="4.5" x="8" y="5.5" fill="#1a8fe3"/>
-            <rect width="4.5" height="4.5" x="13.5" y="5.5" fill="#0078d4"/>
-            <rect width="10.5" height="13" x="0" y="5" fill="#0078d4" rx="1.5"/>
-            <ellipse cx="5.25" cy="11.5" rx="2.8" ry="3.5" fill="white"/>
-        </svg>
     );
 }
 
@@ -135,9 +182,55 @@ const styles = {
         color: "#1f2937",
     },
     subtitle: {
-        margin: "0 0 32px 0",
+        margin: "0 0 24px 0",
         fontSize: "14px",
         color: "#6b7280",
+    },
+    tabRow: {
+        display: "flex",
+        marginBottom: "20px",
+        borderRadius: "8px",
+        border: "1px solid #e5e7eb",
+        overflow: "hidden",
+    },
+    tab: {
+        flex: 1,
+        padding: "10px",
+        fontSize: "14px",
+        fontWeight: "500",
+        border: "none",
+        backgroundColor: "transparent",
+        cursor: "pointer",
+        color: "#6b7280",
+        transition: "all 0.15s",
+    },
+    tabActive: {
+        backgroundColor: "#1f2937",
+        color: "white",
+    },
+    input: {
+        width: "100%",
+        padding: "12px 14px",
+        fontSize: "15px",
+        border: "1px solid #d1d5db",
+        borderRadius: "8px",
+        marginBottom: "12px",
+        boxSizing: "border-box",
+        outline: "none",
+        transition: "border-color 0.15s",
+    },
+    submitButton: {
+        width: "100%",
+        padding: "12px 16px",
+        fontSize: "16px",
+        fontWeight: "500",
+        backgroundColor: "#1f2937",
+        color: "white",
+        border: "none",
+        borderRadius: "8px",
+        cursor: "pointer",
+        marginTop: "4px",
+        transition: "background-color 0.2s",
     },
     errorBanner: {
         color: "#ef4444",
@@ -147,27 +240,16 @@ const styles = {
         backgroundColor: "#fee2e2",
         borderRadius: "8px",
     },
-    providerButton: {
-        width: "100%",
-        padding: "12px 16px",
-        fontSize: "16px",
-        fontWeight: "500",
-        backgroundColor: "#fff",
-        border: "1px solid #d1d5db",
-        borderRadius: "8px",
-        cursor: "pointer",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "8px",
-        transition: "all 0.2s",
+    messageBanner: {
+        fontSize: "14px",
         marginBottom: "12px",
+        padding: "12px",
+        borderRadius: "8px",
+        textAlign: "left",
     },
     disclaimer: {
-        marginTop: "24px",
+        marginTop: "20px",
         fontSize: "12px",
         color: "#9ca3af",
     },
 };
-
-

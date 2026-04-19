@@ -5,13 +5,12 @@
 
 import { createClient } from '@supabase/supabase-js'
 
-export const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY,
-  {
-    auth: {
-      detectSessionInUrl: true,  // Required for OAuth redirect handling
-      persistSession: true,
-    }
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    // Disables the navigator lock that causes AbortErrors in React Strict Mode
+    lock: async (name, acquireTimeout, fn) => fn(),
   }
-)
+})
