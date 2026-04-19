@@ -11,8 +11,10 @@ import ProfileSetup from './profilesetup';
 
 const ALLOWED_DOMAINS = [
     "g.hmc.edu", 
+    "hmc.edu",
     "mymail.pomona.edu",
     "cmc.edu",
+    "students.claremontmckenna.edu",
     "students.scrippscollege.edu", 
     "students.pitzer.edu",
 ]
