@@ -348,21 +348,26 @@ export default function CreateListing() {
 }
 
 const styles = {
+
+  // ── Page shell — warm cream background from --color-bg
   page: {
     minHeight: "100vh",
-    backgroundColor: "#FAFAF7",
-    fontFamily: "'DM Sans', 'Helvetica Neue', Arial, sans-serif",
-    color: "#1a1a1a",
+    backgroundColor: "#fff5da",       // --color-bg
+    color: "#111111",                  // --color-text
+    fontFamily: "Arial, sans-serif",   // --font-body
     paddingBottom: "80px",
   },
+
+  // ── Sticky header — surface color, black border like your global border style
   header: {
-    backgroundColor: "#ffffff",
-    borderBottom: "1.5px solid #EAEAE4",
+    backgroundColor: "#fffaec",        // --color-surface
+    borderBottom: "1.5px solid #000000", // --color-border
     padding: "0 24px",
     position: "sticky",
     top: 0,
     zIndex: 100,
   },
+  
   headerInner: {
     maxWidth: "680px",
     margin: "0 auto",
@@ -371,21 +376,31 @@ const styles = {
     gap: "12px",
     height: "60px",
   },
-  logo: {
-    fontWeight: "800",
+
+  // Logo uses Pally bold + crimson, matches your global nav style
+  logoBtn: {
+    fontFamily: "'Pally', sans-serif",  // --font-display
+    fontWeight: "700",
     fontSize: "17px",
     letterSpacing: "-0.5px",
-    color: "#2D6A4F",
+    color: "#941b32",                   // --color-primary
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    padding: 0,
   },
   headerDivider: {
-    color: "#ddd",
+    color: "#555555",                   // --color-text-muted
     fontSize: "16px",
   },
   headerTitle: {
+    fontFamily: "Arial, sans-serif",    // --font-body
     fontSize: "14px",
-    color: "#999",
-    fontWeight: "500",
+    color: "#555555",                   // --color-text-muted
+    fontWeight: "400",
   },
+
+  // ── Form container
   form: {
     maxWidth: "680px",
     margin: "0 auto",
@@ -394,35 +409,45 @@ const styles = {
     flexDirection: "column",
     gap: "52px",
   },
+
   section: {
     display: "flex",
     flexDirection: "column",
     gap: "14px",
   },
+
+  // Step label — Pally font for the heading, crimson badge
   stepLabel: {
     display: "flex",
     alignItems: "center",
     gap: "10px",
     fontSize: "17px",
     fontWeight: "700",
-    color: "#1a1a1a",
+    fontFamily: "'Pally', sans-serif",  // --font-display
+    color: "#111111",                   // --color-text
     letterSpacing: "-0.2px",
   },
+
+  // Step number badge — crimson bg + cream text, matches --color-primary
   stepNum: {
     fontSize: "10px",
     fontWeight: "700",
-    color: "#2D6A4F",
-    backgroundColor: "#E8F5EE",
+    color: "#ffffff",
+    backgroundColor: "#941b32",         // --color-primary
     borderRadius: "5px",
     padding: "3px 7px",
     letterSpacing: "0.5px",
     fontFamily: "monospace",
   },
+
   optional: {
     fontSize: "13px",
     fontWeight: "400",
-    color: "#bbb",
+    color: "#555555",                   // --color-text-muted
+    fontFamily: "Arial, sans-serif",    // --font-body
   },
+
+  // ── Select dropdown — black border like global --color-border
   selectWrapper: {
     position: "relative",
     display: "inline-block",
@@ -431,12 +456,12 @@ const styles = {
   select: {
     width: "100%",
     padding: "13px 40px 13px 16px",
-    border: "1.5px solid #EAEAE4",
-    borderRadius: "11px",
-    fontSize: "15px",
-    fontFamily: "inherit",
-    backgroundColor: "#ffffff",
-    color: "#1a1a1a",
+    border: "1.5px solid #000000",      // --color-border
+    borderRadius: "8px",                // matches global button border-radius
+    fontSize: "0.95rem",                // matches global p/input font-size
+    fontFamily: "Arial, sans-serif",    // --font-body
+    backgroundColor: "#fffaec",         // --color-surface
+    color: "#111111",                   // --color-text
     outline: "none",
     appearance: "none",
     cursor: "pointer",
@@ -449,28 +474,33 @@ const styles = {
     top: "50%",
     transform: "translateY(-50%)",
     fontSize: "14px",
-    color: "#999",
+    color: "#555555",                   // --color-text-muted
     pointerEvents: "none",
   },
+
+  // ── Text input — matches global input styling
   input: {
     width: "100%",
     padding: "13px 16px",
-    border: "1.5px solid #EAEAE4",
-    borderRadius: "11px",
-    fontSize: "15px",
-    fontFamily: "inherit",
-    backgroundColor: "#ffffff",
+    border: "1.5px solid #000000",      // --color-border
+    borderRadius: "8px",
+    fontSize: "0.95rem",                // matches global input font-size
+    fontFamily: "Arial, sans-serif",    // --font-body
+    backgroundColor: "#fffaec",         // --color-surface
     outline: "none",
     boxSizing: "border-box",
-    color: "#1a1a1a",
+    color: "#111111",                   // --color-text
     transition: "border-color 0.15s",
   },
   charCount: {
     fontSize: "12px",
-    color: "#ccc",
+    color: "#555555",                   // --color-text-muted
     textAlign: "right",
     marginTop: "-8px",
+    fontFamily: "Arial, sans-serif",
   },
+
+  // ── Description textarea
   descWrapper: {
     position: "relative",
   },
@@ -484,9 +514,9 @@ const styles = {
     pointerEvents: "all",
     cursor: "text",
     zIndex: 1,
-    backgroundColor: "#ffffff",
-    borderRadius: "11px",
-    border: "1.5px solid #EAEAE4",
+    backgroundColor: "#fffaec",         // --color-surface
+    borderRadius: "8px",
+    border: "1.5px solid #000000",      // --color-border
     overflowY: "auto",
     boxSizing: "border-box",
   },
@@ -494,28 +524,31 @@ const styles = {
     margin: "0 0 10px 0",
     fontSize: "13.5px",
     fontWeight: "600",
-    color: "#b0b0a8",
+    color: "#555555",                   // --color-text-muted
     lineHeight: "1.4",
+    fontFamily: "Arial, sans-serif",
   },
   placeholderBullet: {
     margin: "3px 0",
     fontSize: "13px",
-    color: "#c8c8c0",
+    color: "#888888",
     lineHeight: "1.65",
+    fontFamily: "Arial, sans-serif",
   },
   placeholderLine: {
     margin: "2px 0",
     fontSize: "13px",
-    color: "#d0d0c8",
+    color: "#aaaaaa",
+    fontFamily: "Arial, sans-serif",
   },
   textarea: {
     width: "100%",
     padding: "14px 16px",
-    border: "1.5px solid #EAEAE4",
-    borderRadius: "11px",
-    fontSize: "14px",
-    fontFamily: "inherit",
-    backgroundColor: "#ffffff",
+    border: "1.5px solid #000000",      // --color-border
+    borderRadius: "8px",
+    fontSize: "0.95rem",                // matches global textarea font-size
+    fontFamily: "Arial, sans-serif",    // --font-body
+    backgroundColor: "#fffaec",         // --color-surface
     outline: "none",
     resize: "vertical",
     boxSizing: "border-box",
@@ -524,10 +557,15 @@ const styles = {
     transition: "border-color 0.15s",
     position: "relative",
     zIndex: 2,
+    color: "#111111",                   // --color-text
   },
+
+  // On focus, border turns crimson — uses --color-primary
   textareaFocused: {
-    borderColor: "#2D6A4F",
+    borderColor: "#941b32",             // --color-primary
   },
+
+  // ── Image upload grid
   imageGrid: {
     display: "flex",
     flexWrap: "wrap",
@@ -537,9 +575,9 @@ const styles = {
     position: "relative",
     width: "92px",
     height: "92px",
-    borderRadius: "10px",
+    borderRadius: "8px",
     overflow: "hidden",
-    border: "1.5px solid #EAEAE4",
+    border: "1.5px solid #000000",      // --color-border
   },
   thumbImg: {
     width: "100%",
@@ -553,7 +591,7 @@ const styles = {
     width: "20px",
     height: "20px",
     borderRadius: "50%",
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor: "#941b32",         // --color-primary
     color: "#fff",
     border: "none",
     cursor: "pointer",
@@ -565,32 +603,38 @@ const styles = {
     lineHeight: 1,
     padding: 0,
     zIndex: 2,
+    fontFamily: "Arial, sans-serif",
   },
+
+  // Upload button — dashed black border, cream bg, Pally font via global button styles
   uploadBtn: {
     width: "92px",
     height: "92px",
-    borderRadius: "10px",
-    border: "1.5px dashed #C8C8C0",
-    backgroundColor: "#ffffff",
+    borderRadius: "8px",
+    border: "1.5px dashed #000000",     // --color-border dashed
+    backgroundColor: "#fffaec",         // --color-surface
     cursor: "pointer",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
     gap: "4px",
-    fontFamily: "inherit",
-    transition: "border-color 0.15s",
+    fontFamily: "'Pally', sans-serif",  // --font-display (global button font)
+    transition: "opacity 0.15s",
   },
   uploadIcon: {
     fontSize: "24px",
-    color: "#aaa",
+    color: "#555555",                   // --color-text-muted
     lineHeight: 1,
   },
   uploadText: {
     fontSize: "11px",
-    color: "#bbb",
-    fontWeight: "500",
+    color: "#555555",                   // --color-text-muted
+    fontWeight: "600",
+    fontFamily: "'Pally', sans-serif",
   },
+
+  // ── Pricing
   pricingRow: {
     display: "flex",
     alignItems: "flex-end",
@@ -604,44 +648,48 @@ const styles = {
   },
   priceLabel: {
     fontSize: "11px",
-    fontWeight: "600",
-    color: "#888",
+    fontWeight: "700",
+    fontFamily: "'Pally', sans-serif",  // --font-display for labels
+    color: "#555555",                   // --color-text-muted
     textTransform: "uppercase",
     letterSpacing: "0.6px",
   },
   priceInputWrap: {
     display: "flex",
     alignItems: "center",
-    border: "1.5px solid #EAEAE4",
-    borderRadius: "11px",
-    backgroundColor: "#ffffff",
+    border: "1.5px solid #000000",      // --color-border
+    borderRadius: "8px",
+    backgroundColor: "#fffaec",         // --color-surface
     overflow: "hidden",
     paddingLeft: "13px",
   },
   dollarSign: {
     fontSize: "14px",
-    color: "#999",
+    color: "#555555",                   // --color-text-muted
     fontWeight: "600",
     userSelect: "none",
+    fontFamily: "Arial, sans-serif",
   },
   priceInput: {
     flex: 1,
     padding: "12px 12px",
     border: "none",
     outline: "none",
-    fontSize: "15px",
-    fontFamily: "inherit",
+    fontSize: "0.95rem",
+    fontFamily: "Arial, sans-serif",    // --font-body
     backgroundColor: "transparent",
-    color: "#1a1a1a",
+    color: "#111111",                   // --color-text
     minWidth: 0,
   },
   priceDivider: {
     paddingBottom: "13px",
-    color: "#ccc",
+    color: "#555555",                   // --color-text-muted
     fontSize: "18px",
     fontWeight: "300",
     flexShrink: 0,
   },
+
+  // ── Publish
   publishRow: {
     display: "flex",
     flexDirection: "column",
@@ -649,26 +697,34 @@ const styles = {
     gap: "10px",
     paddingTop: "4px",
   },
+
+  // Publish button — matches global button: Pally, black border, rounded
+  // Active state: crimson bg + white text (--color-primary)
   publishBtn: {
-    backgroundColor: "#2D6A4F",
-    color: "#ffffff",
-    border: "none",
-    borderRadius: "12px",
-    padding: "16px 44px",
-    fontSize: "16px",
+    fontFamily: "'Pally', sans-serif",  // --font-display (global button font)
+    fontSize: "1rem",
     fontWeight: "700",
+    backgroundColor: "#941b32",         // --color-primary
+    color: "#ffffff",
+    border: "1.5px solid #000000",      // --color-border
+    borderRadius: "8px",                // global button border-radius
+    padding: "16px 44px",
     cursor: "pointer",
-    fontFamily: "inherit",
     letterSpacing: "-0.2px",
-    transition: "opacity 0.15s, transform 0.1s",
+    transition: "opacity 0.15s",
   },
+
+  // Disabled state — muted, matches --color-text-muted tone
   publishBtnDisabled: {
-    backgroundColor: "#C8C8C0",
+    backgroundColor: "#cccccc",
+    color: "#888888",
+    borderColor: "#cccccc",
     cursor: "not-allowed",
   },
   publishHint: {
     fontSize: "13px",
-    color: "#bbb",
+    color: "#555555",                   // --color-text-muted
     margin: 0,
+    fontFamily: "Arial, sans-serif",    // --font-body
   },
 };
