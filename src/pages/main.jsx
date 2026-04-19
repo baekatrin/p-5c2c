@@ -47,14 +47,25 @@ export function App() {
   }, []);
 
   const validateEmailDomain = useCallback((session) => {
-    if (!session?.user?.email) return false;
-    
-    const domain = session.user.email.split("@")[1];
+    if (!session?.user) return false;
+
+    // Azure OAuth stores email in metadata — check all possible locations
+    const email =
+      session.user.email ||
+      session.user.user_metadata?.email ||
+      session.user.user_metadata?.preferred_username;
+
+    if (!email) {
+      setEmailError("Could not retrieve your email address.");
+      supabase.auth.signOut();
+      return false;
+    }
+
+    const domain = email.split("@")[1]?.toLowerCase();
     const isValid = ALLOWED_DOMAINS.includes(domain);
     
     if (!isValid) {
       setEmailError("You must use a 5C student email to access this platform.");
-      // Sign out user with invalid email
       supabase.auth.signOut();
     } else {
       setEmailError(null);
@@ -79,14 +90,20 @@ export function App() {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (session && !validateEmailDomain(session)) {
-          setSession(null);
-          return;
+      async (event, session) => {
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          if (session && !validateEmailDomain(session)) {
+            setSession(null);
+            return;
+          }
+          setSession(session);
+          await checkProfile(session);
         }
-        
-        setSession(session);
-        await checkProfile(session);
+
+        if (event === 'SIGNED_OUT') {
+          setSession(null);
+          setHasProfile(false);
+        }
       }
     );
 
