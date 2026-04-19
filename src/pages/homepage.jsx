@@ -83,6 +83,7 @@ function Navbar({ navigate, onLogout }) {
     <nav style={styles.navbar}>
       {/* ── LOGO ── clicking it returns you to the homepage */}
       <button
+        type="button"
         style={styles.logo}
         onClick={() => navigate("/")}
         title="Go to homepage"
@@ -106,8 +107,11 @@ function Navbar({ navigate, onLogout }) {
 
       {/* ── CREATE LISTING BUTTON ── routes to the create listing page */}
       <button
+        type="button"
         style={styles.createBtn}
-        onClick={() => navigate("/createlisting")}
+        onClick={() => {
+          console.log("create listing clicked");
+          navigate("/createlisting")}}
       >
         + Create Listing
       </button>
@@ -116,18 +120,26 @@ function Navbar({ navigate, onLogout }) {
       <div style={styles.iconCluster}>
 
         {/* Favorites heart → favorites page */}
-        <button style={styles.iconBtn} onClick={() => navigate("/favorites")} title="Favorites">
+        <button
+          type="button"
+          style={styles.iconBtn}
+          onClick={() => {
+            console.log("favorites clicked");
+            navigate("/favorites")}}
+          title="Favorites"
+        >
           <HeartIcon />
         </button>
 
         {/* Inbox → messages page */}
-        <button style={styles.iconBtn} onClick={() => navigate("/messages")} title="Messages">
+        <button type="button" style={styles.iconBtn} onClick={() => navigate("/messages")} title="Messages">
           <InboxIcon />
         </button>
 
         {/* User avatar → profile dropdown menu */}
         <div style={styles.profileMenuContainer}>
           <button 
+            type="button"
             style={styles.avatarBtn} 
             onClick={() => setShowProfileMenu(!showProfileMenu)}
             title="Profile"
@@ -140,6 +152,7 @@ function Navbar({ navigate, onLogout }) {
           {showProfileMenu && (
             <div style={styles.profileDropdown}>
               <button 
+                type="button"
                 style={styles.dropdownBtn}
                 onClick={() => {
                   setShowProfileMenu(false);
@@ -149,6 +162,7 @@ function Navbar({ navigate, onLogout }) {
                 See Profile
               </button>
               <button 
+                type="button"
                 style={{...styles.dropdownBtn, ...styles.dropdownBtnDanger}}
                 onClick={handleLogout}
               >
@@ -409,6 +423,9 @@ const styles = {
   },
   searchForm: {
     flex: 1,                       // Takes up all remaining space between logo and buttons
+    minWidth: 0,                   // Prevents flex children from overflowing under right-side controls
+    position: "relative",
+    zIndex: 1,
   },
   searchInput: {
     width: "100%",
@@ -448,6 +465,9 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "4px",
+    flexShrink: 0,
+    position: "relative",
+    zIndex: 2,
   },
   iconBtn: {
     background: "none",

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom"
 import { supabase } from '../supabaseClient';
 import './index.css'
 import HomePage from "./homepage";
@@ -9,6 +9,7 @@ import ViewListing from "./viewlisting";
 import LoginPrompt from "./loginprompt";
 import ProfileSetup from './profilesetup';
 import Favorites from "./favorites";
+
 
 const ALLOWED_DOMAINS = [
     "g.hmc.edu", 
@@ -99,7 +100,7 @@ export function App() {
   if (loading) return <p>Loading...</p>;
 
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         {!session ? (
           <>
@@ -121,7 +122,7 @@ export function App() {
           </>
         )}
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 
