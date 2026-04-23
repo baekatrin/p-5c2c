@@ -103,7 +103,13 @@ export default function Favorites() {
       {loading ? (
         <p style={styles.muted}>Loading...</p>
       ) : rows.length === 0 ? (
-        <p style={styles.muted}>No favorites yet.</p>
+        <div style={styles.emptyState}>
+          <p style={styles.emptyTitle}>No favorites yet</p>
+          <p style={styles.muted}>Tap the heart on any listing to save it here.</p>
+          <button type="button" style={styles.emptyCta} onClick={() => navigate("/")}>
+            Browse listings
+          </button>
+        </div>
       ) : (
         <div style={styles.grid}>
           {rows.map((row) => {
@@ -179,6 +185,32 @@ const styles = {
     margin: 0,
     color: "#555",
     fontSize: "14px",
+  },
+  emptyState: {
+    marginTop: "12px",
+    background: "#fff",
+    border: "1.5px solid #000",
+    borderRadius: "12px",
+    padding: "18px",
+    maxWidth: "420px",
+  },
+  emptyTitle: {
+    margin: "0 0 6px",
+    fontSize: "20px",
+    fontWeight: "800",
+    color: "#111",
+    fontFamily: "'Pally', sans-serif",
+  },
+  emptyCta: {
+    marginTop: "12px",
+    backgroundColor: "#941b32",
+    color: "#fff",
+    border: "1.5px solid #000",
+    borderRadius: "8px",
+    padding: "9px 14px",
+    fontWeight: "700",
+    cursor: "pointer",
+    fontFamily: "'Pally', sans-serif",
   },
   mutedSmall: {
     margin: "6px 0 0",

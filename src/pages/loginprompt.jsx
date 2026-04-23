@@ -19,10 +19,20 @@ export default function LoginPrompt({ emailError }) {
         setMessage({ type: "", text: "" });
 
         try {
+            const isLocalDev =
+                window.location.hostname === "localhost" ||
+                window.location.hostname === "127.0.0.1";
+
+            // Keep OAuth callback on the same environment:
+            // local dev returns to localhost, production returns to current origin.
+            // NOTE: Avoid hash fragments in OAuth callback URL so Supabase can
+            // reliably read the authorization code from the query string.
+            const redirectBase = isLocalDev ? "http://localhost:5173" : window.location.origin;
+
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                    redirectTo: window.location.origin + '/',
+                    redirectTo: `${redirectBase}/`,
                 }
             });
 
