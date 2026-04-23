@@ -110,10 +110,10 @@ function Navbar({ navigate, onLogout }) {
         type="button"
         style={styles.createBtn}
         onClick={() => {
-          console.log("create listing clicked");
-          navigate("/createlisting")}}
+          window.location.hash = "#/favorites";
+        }}
       >
-        + Create Listing
+        + Create Listing (debug to favorites)
       </button>
 
       {/* ── RIGHT-SIDE ICON CLUSTER ── */}
@@ -124,8 +124,8 @@ function Navbar({ navigate, onLogout }) {
           type="button"
           style={styles.iconBtn}
           onClick={() => {
-            console.log("favorites clicked");
-            navigate("/favorites")}}
+            window.location.hash = "#/favorites";
+          }}
           title="Favorites"
         >
           <HeartIcon />
