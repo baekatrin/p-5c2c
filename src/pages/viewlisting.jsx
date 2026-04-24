@@ -3,7 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import ChatPopup from "./chatpopup";
 
-// Placeholder images
 const PLACEHOLDER_IMAGES = [
   { color: "#d4c5b0", label: "1" },
   { color: "#b0c5d4", label: "2" },
@@ -47,11 +46,9 @@ export default function ViewListing() {
       : `$${listing.priceMin} – $${listing.priceMax}`;
 
   // -----------------------------
-  // MESSAGE SELLER (FIXED)
+  // MESSAGE SELLER
   // -----------------------------
   const handleMessageSeller = async () => {
-    console.log("message clicked");
-
     const { data: userData } = await supabase.auth.getUser();
     const buyerId = userData?.user?.id;
 
@@ -59,14 +56,13 @@ export default function ViewListing() {
 
     const sellerId = listing.seller_id;
 
-    // TEMP FIX for mock data so UI doesn't break
+    // TEMP fallback for mock data
     if (!sellerId) {
       setConversationId("demo");
       setChatOpen(true);
       return;
     }
 
-    // check existing conversation
     let { data: convo } = await supabase
       .from("conversations")
       .select("*")
@@ -75,9 +71,8 @@ export default function ViewListing() {
       .eq("seller_id", sellerId)
       .single();
 
-    // create if not exists
     if (!convo) {
-      const { data: newConvo, error } = await supabase
+      const { data: newConvo } = await supabase
         .from("conversations")
         .insert({
           listing_id: listing.id,
@@ -86,11 +81,6 @@ export default function ViewListing() {
         })
         .select()
         .single();
-
-      if (error) {
-        console.log(error);
-        return;
-      }
 
       convo = newConvo;
     }
@@ -126,7 +116,6 @@ export default function ViewListing() {
 
           <p>Seller: {listing.seller}</p>
 
-          {/* FIXED BUTTON */}
           <button
             style={styles.messageBtn}
             onClick={handleMessageSeller}
@@ -146,9 +135,10 @@ export default function ViewListing() {
       {/* CHAT POPUP */}
       {chatOpen && (
         <ChatPopup
-          open={chatOpen}
           conversationId={conversationId}
+          listingName={listing.name}
           onClose={() => setChatOpen(false)}
+          onOpenInbox={() => navigateTo("/messages")}
         />
       )}
     </div>
