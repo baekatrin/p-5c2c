@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import ChatPopup from "./chatpopup";
 
-// Placeholder sub-images — 5 colored blocks
+// Placeholder images
 const PLACEHOLDER_IMAGES = [
   { color: "#d4c5b0", label: "1" },
   { color: "#b0c5d4", label: "2" },
@@ -22,17 +22,6 @@ const PRODUCTS = [
     priceMin: 100,
     priceMax: 100,
     category: "Category",
-    seller_id: null, // IMPORTANT: mock data (real listings must include this)
-  },
-  {
-    id: 2,
-    name: "Listing Name",
-    seller: "Shop Name",
-    images: [],
-    description: "A short description of this listing.",
-    priceMin: 100,
-    priceMax: 150,
-    category: "Category",
     seller_id: null,
   },
 ];
@@ -41,38 +30,41 @@ export default function ViewListing() {
   const { id } = useParams();
   const navigateTo = useNavigate();
 
-  const [favorited, setFavorited] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(0);
-
-  // CHAT STATE
   const [chatOpen, setChatOpen] = useState(false);
   const [conversationId, setConversationId] = useState(null);
 
-  const listing = PRODUCTS.find((p) => p.id === parseInt(id)) || PRODUCTS[0];
+  const listing =
+    PRODUCTS.find((p) => p.id === parseInt(id)) || PRODUCTS[0];
 
-  const hasRealImages = listing.images && listing.images.length > 0;
-  const images = hasRealImages ? listing.images : PLACEHOLDER_IMAGES;
+  const images =
+    listing.images && listing.images.length > 0
+      ? listing.images
+      : PLACEHOLDER_IMAGES;
 
   const priceLabel =
     listing.priceMin === listing.priceMax
       ? `$${listing.priceMin}`
       : `$${listing.priceMin} – $${listing.priceMax}`;
 
-  // ---------------------------
-  // MESSAGE SELLER LOGIC
-  // ---------------------------
+  // -----------------------------
+  // MESSAGE SELLER (FIXED)
+  // -----------------------------
   const handleMessageSeller = async () => {
+    console.log("message clicked");
+
     const { data: userData } = await supabase.auth.getUser();
     const buyerId = userData?.user?.id;
 
+    if (!buyerId) return;
+
     const sellerId = listing.seller_id;
 
-    if (!buyerId || !sellerId) {
-      console.log("Missing buyer or seller id (mock listing likely)");
+    // TEMP FIX for mock data so UI doesn't break
+    if (!sellerId) {
+      setConversationId("demo");
+      setChatOpen(true);
       return;
     }
-
-    if (buyerId === sellerId) return;
 
     // check existing conversation
     let { data: convo } = await supabase
@@ -109,35 +101,24 @@ export default function ViewListing() {
 
   return (
     <div style={styles.page}>
-      {/* Back button */}
       <button style={styles.backBtn} onClick={() => navigateTo(-1)}>
         Back
       </button>
 
       <div style={styles.layout}>
-        {/* LEFT */}
         <div style={styles.imageColumn}>
           <div style={styles.imageBox}>
-            {hasRealImages ? (
-              <img
-                src={images[activeIndex]}
-                alt={listing.name}
-                style={styles.image}
-              />
-            ) : (
-              <div
-                style={{
-                  ...styles.placeholderSwatch,
-                  backgroundColor: images[activeIndex].color,
-                }}
-              >
-                Image {images[activeIndex].label}
-              </div>
-            )}
+            <div
+              style={{
+                ...styles.placeholderSwatch,
+                backgroundColor: images[0].color,
+              }}
+            >
+              Image {images[0].label}
+            </div>
           </div>
         </div>
 
-        {/* RIGHT */}
         <div style={styles.detailsColumn}>
           <h1>{listing.name}</h1>
           <p>{listing.description}</p>
@@ -145,8 +126,11 @@ export default function ViewListing() {
 
           <p>Seller: {listing.seller}</p>
 
-          {/* MESSAGE BUTTON (FIXED) */}
-          <button style={styles.messageBtn} onClick={handleMessageSeller}>
+          {/* FIXED BUTTON */}
+          <button
+            style={styles.messageBtn}
+            onClick={handleMessageSeller}
+          >
             Message seller to purchase
           </button>
 
@@ -193,11 +177,6 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-  },
-  image: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
   },
   placeholderSwatch: {
     width: "100%",
