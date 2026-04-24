@@ -25,10 +25,30 @@ export default function LoginPrompt({ emailError }) {
     const handleSubmit = async () => {
         setMessage({ type: "", text: "" });
 
+<<<<<<< HEAD
         if (!email || !password) {
             setMessage({ type: "error", text: "Please fill in all fields." });
             return;
         }
+=======
+        try {
+            const isLocalDev =
+                window.location.hostname === "localhost" ||
+                window.location.hostname === "127.0.0.1";
+
+            // Keep OAuth callback on the same environment:
+            // local dev returns to localhost, production returns to current origin.
+            // NOTE: Avoid hash fragments in OAuth callback URL so Supabase can
+            // reliably read the authorization code from the query string.
+            const redirectBase = isLocalDev ? "http://localhost:5173" : window.location.origin;
+
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: `${redirectBase}/`,
+                }
+            });
+>>>>>>> kelly
 
         if (!validateDomain(email)) {
             setMessage({ type: "error", text: "You must use a 5C student email to access this platform." });

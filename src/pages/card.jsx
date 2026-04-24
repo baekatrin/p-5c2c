@@ -21,8 +21,15 @@ const ImagePlaceholderIcon = () => (
  *    priceMax    : number           — high end (set equal to priceMin for fixed price)
  *  }
  *  onClick — optional callback when card is clicked
+ *  onFavoriteToggle — optional async callback when heart is clicked (return a Promise)
  */
-export default function Card({ listing, onClick, aspectRatio = "4/5" }) {
+export default function Card({
+  listing,
+  onClick,
+  aspectRatio = "4/5",
+  isFavorited = false,
+  onFavoriteToggle,
+}) {
   const [activeIndex, setActiveIndex] = useState(0);
 
   const images = listing.images && listing.images.length > 0 ? listing.images : [null];
@@ -78,6 +85,23 @@ export default function Card({ listing, onClick, aspectRatio = "4/5" }) {
             ))}
           </div>
         )}
+
+        {onFavoriteToggle && (
+          <button
+            type="button"
+            style={{
+              ...styles.favoriteBtn,
+              ...(isFavorited ? styles.favoriteBtnActive : {}),
+            }}
+            title={isFavorited ? "Remove from favorites" : "Add to favorites"}
+            onClick={async (e) => {
+              e.stopPropagation();
+              await onFavoriteToggle();
+            }}
+          >
+            <HeartIcon filled={isFavorited} />
+          </button>
+        )}
       </div>
 
       {/* ── INFO AREA ── */}
@@ -99,6 +123,12 @@ export default function Card({ listing, onClick, aspectRatio = "4/5" }) {
     </div>
   );
 }
+
+const HeartIcon = ({ filled }) => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill={filled ? "#941b32" : "none"} stroke={filled ? "#941b32" : "#333"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+  </svg>
+);
 
 
 // ── Styles ─────────────────────────────────────────────────────────────────
@@ -168,6 +198,26 @@ const styles = {
   },
   dotActive: {
     backgroundColor: "#fff",
+  },
+
+  favoriteBtn: {
+    position: "absolute",
+    top: "10px",
+    right: "10px",
+    width: "34px",
+    height: "34px",
+    borderRadius: "999px",
+    border: "1.5px solid rgba(0,0,0,0.25)",
+    background: "rgba(255,255,255,0.9)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    padding: 0,
+  },
+  favoriteBtnActive: {
+    background: "rgba(255,255,255,1)",
+    border: "1.5px solid #000",
   },
 
   // Text section

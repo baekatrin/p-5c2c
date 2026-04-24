@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom"
 import { supabase } from '../supabaseClient';
 import './index.css'
 import HomePage from "./homepage";
@@ -8,7 +8,12 @@ import CreateListing from "./createlisting";
 import ViewListing from "./viewlisting";
 import LoginPrompt from "./loginprompt";
 import ProfileSetup from './profilesetup';
+<<<<<<< HEAD
 import Inbox from './inbox'; 
+=======
+import Favorites from "./favorites";
+
+>>>>>>> kelly
 
 const ALLOWED_DOMAINS = [
     "g.hmc.edu", 
@@ -120,7 +125,7 @@ export function App() {
   if (loading) return <p>Loading...</p>;
 
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         {!session ? (
           <>
@@ -135,6 +140,7 @@ export function App() {
         ) : (
           <>
             <Route path="/" element={<HomePage />} />
+            <Route path="/favorites" element={<Favorites />} />
             <Route path="/createlisting" element={<CreateListing />} />
             <Route path="/product/:id" element={<ViewListing />} />
             <Route path="/messages" element={<Inbox />} /> 
@@ -142,7 +148,7 @@ export function App() {
           </>
         )}
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 
