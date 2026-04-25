@@ -8,12 +8,10 @@ import CreateListing from "./createlisting";
 import ViewListing from "./viewlisting";
 import LoginPrompt from "./loginprompt";
 import ProfileSetup from './profilesetup';
-<<<<<<< HEAD
 import Inbox from './inbox'; 
-=======
 import Favorites from "./favorites";
+import ChatPage from "./chatpage";
 
->>>>>>> kelly
 
 const ALLOWED_DOMAINS = [
     "g.hmc.edu", 
@@ -144,6 +142,7 @@ export function App() {
             <Route path="/createlisting" element={<CreateListing />} />
             <Route path="/product/:id" element={<ViewListing />} />
             <Route path="/messages" element={<Inbox />} /> 
+            <Route path="/chat/:id" element={<ChatPage />} />
             <Route path="*" element={<Navigate to="/" />} />
           </>
         )}

@@ -11,19 +11,6 @@ const PLACEHOLDER_IMAGES = [
   { color: "#d4d0b0", label: "5" },
 ];
 
-const PRODUCTS = [
-  {
-    id: 1,
-    name: "Listing Name",
-    seller: "Shop Name",
-    images: [],
-    description: "A short description of this listing.",
-    priceMin: 100,
-    priceMax: 100,
-    category: "Category",
-    seller_id: null,
-  },
-];
 const HeartIcon = ({ filled }) => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill={filled ? "#941b32" : "none"} stroke={filled ? "#941b32" : "#333"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
@@ -51,24 +38,37 @@ export default function ViewListing() {
   const [chatOpen, setChatOpen] = useState(false);
   const [conversationId, setConversationId] = useState(null);
 
-  const listing =
-    PRODUCTS.find((p) => p.id === parseInt(id)) || PRODUCTS[0];
-
-  const images =
-    listing.images && listing.images.length > 0
-      ? listing.images
-      : PLACEHOLDER_IMAGES;
-  const [favorited, setFavorited] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(0);
   const [listing, setListing] = useState(null);
+  const [favorited, setFavorited] = useState(false);
+  const [favoriteBusy, setFavoriteBusy] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
   const [sellerName, setSellerName] = useState("Shop Name");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [brokenImageIndexes, setBrokenImageIndexes] = useState([]);
 
+  const hasRealImages = useMemo(
+    () => Array.isArray(listing?.images) && listing.images.length > 0,
+    [listing?.images]
+  );
+
+  const displayImages = useMemo(() => {
+    if (hasRealImages && listing?.images) return listing.images;
+    return PLACEHOLDER_IMAGES;
+  }, [hasRealImages, listing]);
+
+  const priceLabel = useMemo(() => {
+    const min = listing?.price_min;
+    const max = listing?.price_max;
+
+    if (min == null && max == null) return "Price TBD";
+    if (max == null || min === max) return `$${min}`;
+    return `$${min} – $${max}`;
+  }, [listing?.price_min, listing?.price_max]);
+
   useEffect(() => {
     let isMounted = true;
-    console.log("Looking up listing id:", id);
+
     async function loadListingData() {
       setLoading(true);
       setError("");
@@ -127,23 +127,44 @@ export default function ViewListing() {
     };
   }, [id]);
 
-  // Temporarily disable real image loading so text fields can be validated without image 404s.
-  const hasRealImages = false;
-  const images = PLACEHOLDER_IMAGES;
+  useEffect(() => {
+    let isMounted = true;
 
-  const priceLabel = useMemo(() => {
-    const min = listing?.price_min;
-    const max = listing?.price_max;
+    async function loadFavoriteStatus() {
+      if (!listing?.id) {
+        if (isMounted) setFavorited(false);
+        return;
+      }
 
-    if (min == null && max == null) return "Price TBD";
-    if (max == null || min === max) return `$${min}`;
-    return `$${min} – $${max}`;
-  }, [listing?.price_min, listing?.price_max]);
+      const { data: auth } = await supabase.auth.getUser();
+      const userId = auth?.user?.id;
+      if (!userId) {
+        if (isMounted) setFavorited(false);
+        return;
+      }
+
+      const { data: favoriteRow } = await supabase
+        .from("favorites")
+        .select("id")
+        .eq("userID", userId)
+        .eq("serviceID", listing.id)
+        .maybeSingle();
+
+      if (!isMounted) return;
+      setFavorited(Boolean(favoriteRow));
+    }
+
+    loadFavoriteStatus();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [listing?.id]);
 
   if (loading) {
     return (
       <div style={styles.page}>
-        <button style={styles.backBtn} onClick={() => navigateTo(-1)}>
+        <button style={styles.backBtn} type="button" onClick={() => navigateTo(-1)}>
           <BackIcon />
           Back
         </button>
@@ -155,7 +176,7 @@ export default function ViewListing() {
   if (error || !listing) {
     return (
       <div style={styles.page}>
-        <button style={styles.backBtn} onClick={() => navigateTo(-1)}>
+        <button style={styles.backBtn} type="button" onClick={() => navigateTo(-1)}>
           <BackIcon />
           Back
         </button>
@@ -164,9 +185,6 @@ export default function ViewListing() {
     );
   }
 
-  // -----------------------------
-  // MESSAGE SELLER
-  // -----------------------------
   const handleMessageSeller = async () => {
     const { data: userData } = await supabase.auth.getUser();
     const buyerId = userData?.user?.id;
@@ -175,7 +193,6 @@ export default function ViewListing() {
 
     const sellerId = listing.seller_id;
 
-    // TEMP fallback for mock data
     if (!sellerId) {
       setConversationId("demo");
       setChatOpen(true);
@@ -208,24 +225,54 @@ export default function ViewListing() {
     setChatOpen(true);
   };
 
+  const handleFavoriteToggle = async () => {
+    if (!listing?.id || favoriteBusy) return;
+
+    setFavoriteBusy(true);
+    const nextFavorited = !favorited;
+    setFavorited(nextFavorited);
+
+    const { data: auth } = await supabase.auth.getUser();
+    const userId = auth?.user?.id;
+    if (!userId) {
+      setFavorited(false);
+      setFavoriteBusy(false);
+      return;
+    }
+
+    if (nextFavorited) {
+      const { error: insertError } = await supabase
+        .from("favorites")
+        .insert({ userID: userId, serviceID: listing.id });
+
+      if (insertError) {
+        setFavorited(false);
+      }
+    } else {
+      const { error: deleteError } = await supabase
+        .from("favorites")
+        .delete()
+        .eq("userID", userId)
+        .eq("serviceID", listing.id);
+
+      if (deleteError) {
+        setFavorited(true);
+      }
+    }
+
+    setFavoriteBusy(false);
+  };
+
   return (
     <div style={styles.page}>
-      <button style={styles.backBtn} onClick={() => navigateTo(-1)}>
+      <button style={styles.backBtn} type="button" onClick={() => navigateTo(-1)}>
+        <BackIcon />
         Back
       </button>
 
       <div style={styles.layout}>
         <div style={styles.imageColumn}>
           <div style={styles.imageBox}>
-            <div
-              style={{
-                ...styles.placeholderSwatch,
-                backgroundColor: images[0].color,
-              }}
-            >
-              Image {images[0].label}
-            </div>
-          </div>
             {hasRealImages ? (
               brokenImageIndexes.includes(activeIndex) ? (
                 <div style={{ ...styles.placeholderSwatch, backgroundColor: "#d4c5b0" }}>
@@ -233,7 +280,7 @@ export default function ViewListing() {
                 </div>
               ) : (
                 <img
-                  src={images[activeIndex]}
+                  src={displayImages[activeIndex]}
                   alt={listing.title || "Listing image"}
                   style={styles.image}
                   onError={() =>
@@ -244,48 +291,58 @@ export default function ViewListing() {
                 />
               )
             ) : (
-              <div style={{ ...styles.placeholderSwatch, backgroundColor: images[activeIndex].color }}>
-                <span style={styles.placeholderLabel}>Image {images[activeIndex].label}</span>
+              <div
+                style={{
+                  ...styles.placeholderSwatch,
+                  backgroundColor: displayImages[activeIndex].color,
+                }}
+              >
+                <span style={styles.placeholderLabel}>
+                  Image {displayImages[activeIndex].label}
+                </span>
               </div>
             )}
 
-            {/* Arrows + dots row — bottom center */}
             <div style={styles.dotsOverlay}>
-              {images.length > 1 && (
+              {displayImages.length > 1 && (
                 <button
+                  type="button"
                   style={styles.arrowBtn}
-                  onClick={() => setActiveIndex((i) => (i - 1 + images.length) % images.length)}
+                  onClick={() => setActiveIndex((i) => (i - 1 + displayImages.length) % displayImages.length)}
                 >
                   ‹
                 </button>
               )}
-              {images.map((_, i) => (
+              {displayImages.map((_, i) => (
                 <span
                   key={i}
                   style={{ ...styles.dot, ...(i === activeIndex ? styles.dotActive : {}) }}
                   onClick={() => setActiveIndex(i)}
                 />
               ))}
-              {images.length > 1 && (
+              {displayImages.length > 1 && (
                 <button
+                  type="button"
                   style={styles.arrowBtn}
-                  onClick={() => setActiveIndex((i) => (i + 1) % images.length)}
+                  onClick={() => setActiveIndex((i) => (i + 1) % displayImages.length)}
                 >
                   ›
                 </button>
               )}
             </div>
 
-            {/* Heart + Share buttons — bottom right */}
             <div style={styles.imageBtnStack}>
               <button
+                type="button"
                 style={styles.imageActionBtn}
-                onClick={() => setFavorited((f) => !f)}
+                onClick={handleFavoriteToggle}
                 title={favorited ? "Remove from favorites" : "Add to favorites"}
+                disabled={favoriteBusy}
               >
                 <HeartIcon filled={favorited} />
               </button>
               <button
+                type="button"
                 style={styles.imageActionBtn}
                 onClick={() => navigator.clipboard.writeText(window.location.href)}
                 title="Copy link to clipboard"
@@ -295,10 +352,10 @@ export default function ViewListing() {
             </div>
           </div>
 
-          {/* Thumbnail strip */}
           <div style={styles.thumbnailStrip}>
-            {images.map((img, i) => (
+            {displayImages.map((img, i) => (
               <button
+                type="button"
                 key={i}
                 style={{
                   ...styles.thumbnail,
@@ -326,23 +383,9 @@ export default function ViewListing() {
               </button>
             ))}
           </div>
-
         </div>
 
         <div style={styles.detailsColumn}>
-          <h1>{listing.name}</h1>
-          <p>{listing.description}</p>
-          <h2>{priceLabel}</h2>
-
-          <p>Seller: {listing.seller}</p>
-
-          <button
-            style={styles.messageBtn}
-            onClick={handleMessageSeller}
-          >
-            Message seller to purchase
-          </button>
-          {/* Title + Category + Price */}
           <div style={styles.titlePriceRow}>
             <div style={styles.titleCategoryCol}>
               <h1 style={styles.title}>{listing.title || "Untitled listing"}</h1>
@@ -351,12 +394,10 @@ export default function ViewListing() {
             <div style={styles.priceBox}>{priceLabel}</div>
           </div>
 
-          {/* Description */}
           <div style={styles.descriptionBox}>
             <p style={styles.descriptionText}>{listing.description || "No description provided."}</p>
           </div>
 
-          {/* About the Creator */}
           <div style={styles.creatorRow}>
             <div style={styles.creatorAvatar}>
               <span style={styles.creatorInitial}>
@@ -369,25 +410,20 @@ export default function ViewListing() {
             </div>
           </div>
 
-          {/* Message seller */}
-          <button style={styles.messageBtn}>
+          <button type="button" style={styles.messageBtn} onClick={handleMessageSeller}>
             Message seller to purchase
           </button>
 
-          <button
-            style={styles.sellBtn}
-            onClick={() => navigateTo("/createlisting")}
-          >
+          <button type="button" style={styles.sellBtn} onClick={() => navigateTo("/createlisting")}>
             Sell your own
           </button>
         </div>
       </div>
 
-      {/* CHAT POPUP */}
       {chatOpen && (
         <ChatPopup
           conversationId={conversationId}
-          listingName={listing.name}
+          listingName={listing.title || "Listing"}
           onClose={() => setChatOpen(false)}
           onOpenInbox={() => navigateTo("/messages")}
         />
@@ -428,15 +464,16 @@ const styles = {
     color: "#941b32",
     fontFamily: "'Pally', sans-serif",
   },
-
   layout: {
     display: "flex",
+    flexWrap: "wrap",
     gap: "40px",
   },
   imageColumn: {
     width: "320px",
   },
   imageBox: {
+    position: "relative",
     width: "100%",
     aspectRatio: "3/4",
     border: "1px solid #000",
@@ -446,6 +483,11 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
   },
+  image: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+  },
   placeholderSwatch: {
     width: "100%",
     height: "100%",
@@ -453,11 +495,176 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
   },
+  placeholderLabel: {
+    fontSize: "14px",
+    fontWeight: "700",
+    color: "#333",
+    fontFamily: "'Pally', sans-serif",
+  },
+  dotsOverlay: {
+    position: "absolute",
+    bottom: "10px",
+    left: "50%",
+    transform: "translateX(-50%)",
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+  },
+  arrowBtn: {
+    width: "28px",
+    height: "28px",
+    borderRadius: "50%",
+    border: "1px solid #000",
+    background: "rgba(255,255,255,0.9)",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "16px",
+    padding: 0,
+    fontFamily: "'Pally', sans-serif",
+  },
+  dot: {
+    width: "6px",
+    height: "6px",
+    borderRadius: "50%",
+    backgroundColor: "rgba(0,0,0,0.25)",
+    cursor: "pointer",
+  },
+  dotActive: {
+    backgroundColor: "#000",
+  },
+  imageBtnStack: {
+    position: "absolute",
+    bottom: "10px",
+    right: "10px",
+    display: "flex",
+    gap: "6px",
+  },
+  imageActionBtn: {
+    width: "36px",
+    height: "36px",
+    borderRadius: "8px",
+    border: "1.5px solid #000",
+    background: "rgba(255,255,255,0.95)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    padding: 0,
+  },
+  thumbnailStrip: {
+    display: "flex",
+    gap: "8px",
+    marginTop: "12px",
+    flexWrap: "wrap",
+  },
+  thumbnail: {
+    width: "56px",
+    height: "56px",
+    borderRadius: "8px",
+    border: "1.5px solid #000",
+    padding: 0,
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    background: "#e0e0e0",
+  },
+  thumbnailActive: {
+    outline: "2px solid #941b32",
+  },
+  thumbnailImg: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+  },
+  thumbnailLabel: {
+    fontSize: "12px",
+    fontWeight: "700",
+    color: "#333",
+  },
   detailsColumn: {
     flex: 1,
     display: "flex",
     flexDirection: "column",
     gap: "12px",
+    minWidth: "240px",
+  },
+  titlePriceRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: "16px",
+  },
+  titleCategoryCol: {
+    flex: 1,
+    minWidth: 0,
+  },
+  title: {
+    margin: 0,
+    fontSize: "24px",
+    fontWeight: "900",
+    color: "#111",
+    fontFamily: "'Pally', sans-serif",
+  },
+  categoryBox: {
+    display: "inline-block",
+    marginTop: "8px",
+    padding: "4px 10px",
+    border: "1px solid #000",
+    borderRadius: "6px",
+    fontSize: "12px",
+    fontWeight: "600",
+  },
+  priceBox: {
+    fontSize: "20px",
+    fontWeight: "800",
+    color: "#111",
+    fontFamily: "'Pally', sans-serif",
+  },
+  descriptionBox: {
+    marginTop: "4px",
+  },
+  descriptionText: {
+    margin: 0,
+    fontSize: "15px",
+    lineHeight: 1.5,
+    color: "#333",
+  },
+  creatorRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    marginTop: "8px",
+  },
+  creatorAvatar: {
+    width: "44px",
+    height: "44px",
+    borderRadius: "50%",
+    background: "#ddd",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    border: "1px solid #000",
+  },
+  creatorInitial: {
+    fontSize: "16px",
+    fontWeight: "800",
+  },
+  creatorInfo: {
+    flex: 1,
+  },
+  creatorLabel: {
+    margin: 0,
+    fontSize: "12px",
+    color: "#666",
+  },
+  creatorName: {
+    margin: "4px 0 0",
+    fontSize: "16px",
+    fontWeight: "700",
   },
   messageBtn: {
     background: "#941b32",
@@ -467,6 +674,7 @@ const styles = {
     borderRadius: "8px",
     fontWeight: "700",
     cursor: "pointer",
+    fontFamily: "'Pally', sans-serif",
   },
   sellBtn: {
     background: "#f39836",
@@ -475,12 +683,7 @@ const styles = {
     border: "1px solid black",
     borderRadius: "8px",
     cursor: "pointer",
-  },
-  backBtn: {
-    marginBottom: "20px",
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    fontWeight: "600",
+    fontWeight: "700",
+    fontFamily: "'Pally', sans-serif",
   },
 };
