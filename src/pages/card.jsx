@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React from "react";
 
 const ImagePlaceholderIcon = () => (
   <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#bbb" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -30,20 +30,7 @@ export default function Card({
   isFavorited = false,
   onFavoriteToggle,
 }) {
-  const [activeIndex, setActiveIndex] = useState(0);
-
   const images = listing.images && listing.images.length > 0 ? listing.images : [null];
-  const hasMultiple = images.length > 1;
-
-  function prev(e) {
-    e.stopPropagation();
-    setActiveIndex((i) => (i - 1 + images.length) % images.length);
-  }
-
-  function next(e) {
-    e.stopPropagation();
-    setActiveIndex((i) => (i + 1) % images.length);
-  }
 
   const priceLabel =
     listing.priceMin === listing.priceMax
@@ -54,37 +41,17 @@ export default function Card({
     <div style={styles.card} onClick={onClick}>
 
       {/* ── IMAGE AREA ── */}
-      <div style={{ ...styles.imageArea, aspectRatio }}>
-        {images[activeIndex] ? (
+      <div style={styles.imageArea}>
+        {images[0] ? (
           <img
-            src={images[activeIndex]}
-            alt={`${listing.name} image ${activeIndex + 1}`}
+            src={images[0]}
+            alt={listing.name}
             style={styles.image}
           />
         ) : (
           <ImagePlaceholderIcon />
         )}
 
-        {/* Prev / Next arrows — only shown when there are multiple images */}
-        {hasMultiple && (
-          <>
-            <button style={{ ...styles.arrow, left: "8px" }} onClick={prev}>‹</button>
-            <button style={{ ...styles.arrow, right: "8px" }} onClick={next}>›</button>
-          </>
-        )}
-
-        {/* Dot indicators */}
-        {hasMultiple && (
-          <div style={styles.dots}>
-            {images.map((_, i) => (
-              <span
-                key={i}
-                style={{ ...styles.dot, ...(i === activeIndex ? styles.dotActive : {}) }}
-                onClick={(e) => { e.stopPropagation(); setActiveIndex(i); }}
-              />
-            ))}
-          </div>
-        )}
 
         {onFavoriteToggle && (
           <button
@@ -143,11 +110,10 @@ const styles = {
     fontFamily: "Arial, sans-serif",
   },
 
-  // Image section — same 4/5 aspect ratio as the homepage placeholder
   imageArea: {
     position: "relative",
     width: "100%",
-    minHeight: "120px",
+    minHeight: "80px",
     backgroundColor: "#e0e0e0",
     display: "flex",
     alignItems: "center",
@@ -156,8 +122,8 @@ const styles = {
   },
   image: {
     width: "100%",
-    height: "100%",
-    objectFit: "cover",
+    height: "auto",
+    display: "block",
   },
 
   // Prev / next arrow buttons
@@ -244,7 +210,7 @@ const styles = {
     color: "#555",
     lineHeight: "1.4",
     display: "-webkit-box",
-    WebkitLineClamp: 3,        // clamps description to 3 lines
+    WebkitLineClamp: 3,
     WebkitBoxOrient: "vertical",
     overflow: "hidden",
   },

@@ -214,10 +214,6 @@ export default function MyProfile() {
   return (
     <div style={styles.page}>
 
-      {/* ── HEADER ── */}
-      <div style={styles.header}>
-        <button style={styles.backBtn} onClick={() => navigate(-1)}>← Back</button>
-      </div>
 
       {/* ── PROFILE CARD ── */}
       <div style={styles.profileCard}>

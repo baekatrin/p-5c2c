@@ -84,6 +84,12 @@ export default function CreateListing() {
 
     const { data: { user } } = await supabase.auth.getUser();
 
+    if (!user) {
+      setError("You must be logged in to publish a listing.");
+      setPublishing(false);
+      return;
+    }
+
     // Upload images to Supabase Storage
     const imageUrls = [];
     for (const file of imageFiles) {
@@ -128,13 +134,7 @@ export default function CreateListing() {
   return (
     <div style={styles.page}>
       {/* Header */}
-      <div style={styles.header}>
-        <div style={styles.headerInner}>
-          <span style={styles.logo}>5C2C</span>
-          <span style={styles.headerDivider}>|</span>
-          <span style={styles.headerTitle}>Create a Listing</span>
-        </div>
-      </div>
+      
 
       <form onSubmit={handlePublish} style={styles.form}>
 
