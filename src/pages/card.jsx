@@ -41,7 +41,7 @@ export default function Card({
     <div style={styles.card} onClick={onClick}>
 
       {/* ── IMAGE AREA ── */}
-      <div style={{ ...styles.imageArea, aspectRatio }}>
+      <div style={styles.imageArea}>
         {images[0] ? (
           <img
             src={images[0]}
@@ -113,7 +113,7 @@ const styles = {
   imageArea: {
     position: "relative",
     width: "100%",
-    minHeight: "120px",
+    minHeight: "80px",
     backgroundColor: "#e0e0e0",
     display: "flex",
     alignItems: "center",
@@ -122,8 +122,8 @@ const styles = {
   },
   image: {
     width: "100%",
-    height: "100%",
-    objectFit: "cover",
+    height: "auto",
+    display: "block",
   },
 
   // Prev / next arrow buttons
@@ -210,7 +210,7 @@ const styles = {
     color: "#555",
     lineHeight: "1.4",
     display: "-webkit-box",
-    WebkitLineClamp: 3,        // clamps description to 3 lines
+    WebkitLineClamp: 3,
     WebkitBoxOrient: "vertical",
     overflow: "hidden",
   },
