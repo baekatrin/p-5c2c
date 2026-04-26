@@ -154,14 +154,9 @@ function Navbar({ navigate, onLogout, userId }) {
               <button
                 type="button"
                 style={styles.dropdownBtn}
-                onClick={async () => {
+                onClick={() => {
                   setShowProfileMenu(false);
-                  if (userId) {
-                    navigate(`/profile/${userId}`);
-                  } else {
-                    const { data: { user } } = await supabase.auth.getUser();
-                    if (user) navigate(`/profile/${user.id}`);
-                  }
+                  navigate("/profile");
                 }}
               >
                 See Profile
