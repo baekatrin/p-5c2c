@@ -39,6 +39,7 @@ export default function ViewListing() {
   const [conversationId, setConversationId] = useState(null);
 
   const [listing, setListing] = useState(null);
+  const [currentUserId, setCurrentUserId] = useState(null);
   const [favorited, setFavorited] = useState(false);
   const [favoriteBusy, setFavoriteBusy] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -65,6 +66,10 @@ export default function ViewListing() {
     if (max == null || min === max) return `$${min}`;
     return `$${min} – $${max}`;
   }, [listing?.price_min, listing?.price_max]);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => setCurrentUserId(user?.id ?? null));
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -410,13 +415,16 @@ export default function ViewListing() {
             </div>
           </div>
 
-          <button type="button" style={styles.messageBtn} onClick={handleMessageSeller}>
-            Message seller to purchase
-          </button>
+          {currentUserId && listing?.seller_id === currentUserId ? (
+            <button type="button" style={styles.editBtn} onClick={() => navigateTo(`/editlisting/${id}`)}>
+              Edit Listing
+            </button>
+          ) : (
+            <button type="button" style={styles.messageBtn} onClick={handleMessageSeller}>
+              Message seller to purchase
+            </button>
+          )}
 
-          <button type="button" style={styles.sellBtn} onClick={() => navigateTo("/createlisting")}>
-            Sell your own
-          </button>
         </div>
       </div>
 
@@ -668,7 +676,7 @@ const styles = {
     fontWeight: "700",
   },
   messageBtn: {
-    background: "#941b32",
+    background: "#f39836",
     color: "white",
     padding: "14px",
     border: "1px solid black",
@@ -680,6 +688,17 @@ const styles = {
   sellBtn: {
     background: "#f39836",
     color: "white",
+    padding: "12px 20px",
+    border: "1px solid black",
+    borderRadius: "8px",
+    cursor: "pointer",
+    fontWeight: "700",
+    fontFamily: "'Pally', sans-serif",
+    alignSelf: "flex-start",
+  },
+  editBtn: {
+    background: "#ffffff",
+    color: "#1a1a1a",
     padding: "12px",
     border: "1px solid black",
     borderRadius: "8px",

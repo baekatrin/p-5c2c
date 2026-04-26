@@ -6,6 +6,7 @@ import './index.css'
 import HomePage, { AppNavbar } from "./homepage";
 import CreateListing from "./createlisting";
 import ViewListing from "./viewlisting";
+import EditListing from "./editlisting";
 import ViewProfile from "./viewprofile";
 import LoginPrompt from "./loginprompt";
 import ProfileSetup from './profilesetup';
@@ -168,6 +169,7 @@ export function App() {
               <Route path="/favorites" element={<Favorites />} />
               <Route path="/createlisting" element={<CreateListing />} />
               <Route path="/product/:id" element={<ViewListing />} />
+              <Route path="/editlisting/:id" element={<EditListing />} />
               <Route path="/profile" element={<MyProfile />} />
               <Route path="/profile/:id" element={<ViewProfile />} />
               <Route path="/messages" element={<Inbox />} />
