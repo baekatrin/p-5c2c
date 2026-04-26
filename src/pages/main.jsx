@@ -12,6 +12,7 @@ import ProfileSetup from './profilesetup';
 import Inbox from './inbox'; 
 import Favorites from "./favorites";
 import ChatPage from "./chatpage";
+import MyProfile from './myprofile';
 
 
 const ALLOWED_DOMAINS = [
@@ -142,6 +143,7 @@ export function App() {
             <Route path="/favorites" element={<Favorites />} />
             <Route path="/createlisting" element={<CreateListing />} />
             <Route path="/product/:id" element={<ViewListing />} />
+            <Route path="/profile" element={<MyProfile />} />          {/* ← addition for myprofile page */}
             <Route path="/profile/:id" element={<ViewProfile />} />
             <Route path="/messages" element={<Inbox />} />
             <Route path="/chat/:id" element={<ChatPage />} />
