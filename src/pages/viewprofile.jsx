@@ -37,6 +37,7 @@ export default function ViewProfile() {
   const [loading, setLoading] = useState(true);
   const [userRating, setUserRating] = useState(0);
   const [submitted, setSubmitted] = useState(false);
+  const [messagingBusy, setMessagingBusy] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -50,6 +51,33 @@ export default function ViewProfile() {
     }
     load();
   }, [id]);
+
+  const handleMessageSeller = async () => {
+    setMessagingBusy(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setMessagingBusy(false); return; }
+
+    // find or create a conversation between buyer and this seller (no listing)
+    let { data: convo } = await supabase
+      .from("conversations")
+      .select("id")
+      .eq("buyer_id", user.id)
+      .eq("seller_id", id)
+      .is("listing_id", null)
+      .maybeSingle();
+
+    if (!convo) {
+      const { data: newConvo } = await supabase
+        .from("conversations")
+        .insert({ buyer_id: user.id, seller_id: id, listing_id: null })
+        .select("id")
+        .single();
+      convo = newConvo;
+    }
+
+    setMessagingBusy(false);
+    if (convo) navigate(`/chat/${convo.id}`);
+  };
 
   if (loading) return <p style={{ padding: "40px", fontFamily: "var(--font-body)" }}>Loading...</p>;
   if (!profile) return <p style={{ padding: "40px", fontFamily: "var(--font-body)" }}>Profile not found.</p>;
@@ -96,8 +124,8 @@ export default function ViewProfile() {
 
           {/* Actions */}
           <div style={styles.actions}>
-            <button style={styles.messageBtn} onClick={() => {}}>
-              Message Seller
+            <button style={styles.messageBtn} onClick={handleMessageSeller} disabled={messagingBusy}>
+              {messagingBusy ? "Opening chat..." : "Message Seller"}
             </button>
           </div>
         </div>
