@@ -23,6 +23,7 @@ import Card from "./card";
 import { supabase } from "../supabaseClient";
 
 
+
 function isUuidLike(id) {
   return typeof id === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
 }
@@ -198,13 +199,25 @@ function ProductGrid({ navigate }) {
   }, []);
 
   useEffect(() => {
-    supabase
-      .from("listings")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        if (data) setListings(data);
-      });
+    async function loadListings() {
+      const { data: listingData } = await supabase
+        .from("listings")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (!listingData) return;
+
+      const sellerIds = [...new Set(listingData.map((l) => l.seller_id).filter(Boolean))];
+      const { data: userData } = await supabase
+        .from("User")
+        .select("id, username")
+        .in("id", sellerIds);
+
+      const usernameMap = Object.fromEntries((userData || []).map((u) => [u.id, u.username]));
+
+      setListings(listingData.map((l) => ({ ...l, sellerUsername: usernameMap[l.seller_id] ?? l.seller_id })));
+    }
+    loadListings();
   }, []);
 
   useEffect(() => {
@@ -254,7 +267,7 @@ function ProductGrid({ navigate }) {
   const allListings = listings.map((l) => ({
     id: l.id,
     name: l.title,
-    seller: l.seller_id,
+    seller: l.sellerUsername ?? l.seller_id,
     images: l.images,
     description: l.description,
     priceMin: l.price_min,
@@ -262,9 +275,7 @@ function ProductGrid({ navigate }) {
   }));
 
   const columns = [[], [], [], []];
-  allListings.forEach((listing, index) => {
-    columns[index % 4].push(listing);
-  });
+  allListings.forEach((listing, index) => columns[index % 4].push(listing));
 
   return (
     <main style={styles.gridWrapper}>
