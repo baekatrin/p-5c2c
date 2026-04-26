@@ -22,16 +22,6 @@ import logo from "../assets/logo3.png";
 import Card from "./card";
 import { supabase } from "../supabaseClient";
 
-const DUMMY_LISTINGS = [
-  { id: "d1", name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 100,  aspectRatio: "3/2" },
-  { id: "d2", name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 150, aspectRatio: "1/2" },
-  { id: "d3", name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 100, aspectRatio: "4/5" },
-  { id: "d4", name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 200, aspectRatio: "2/3" },
-  { id: "d5", name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 100, aspectRatio: "1/3" },
-  { id: "d6", name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 100, aspectRatio: "3/2" },
-  { id: "d7", name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 150, aspectRatio: "2/5" },
-  { id: "d8", name: "Listing Name", seller: "Shop Name", images: [], description: "A short description of this listing.", priceMin: 100, priceMax: 100, aspectRatio: "4/3" },
-];
 
 function isUuidLike(id) {
   return typeof id === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
@@ -266,18 +256,15 @@ function ProductGrid({ navigate }) {
     [favoritedIds]
   );
 
-  const allListings = [
-    ...listings.map((l) => ({
-      id: l.id,
-      name: l.title,
-      seller: l.seller_id,
-      images: l.images,
-      description: l.description,
-      priceMin: l.price_min,
-      priceMax: l.price_max,
-    })),
-    ...DUMMY_LISTINGS,
-  ];
+  const allListings = listings.map((l) => ({
+    id: l.id,
+    name: l.title,
+    seller: l.seller_id,
+    images: l.images,
+    description: l.description,
+    priceMin: l.price_min,
+    priceMax: l.price_max,
+  }));
 
   const columns = [[], [], [], []];
   allListings.forEach((listing, index) => {
@@ -427,7 +414,7 @@ const styles = {
     flexShrink: 0,
   },
   searchForm: {
-    flex: 0.5,
+    flex: 1,
     minWidth: 0,
     position: "relative",
     zIndex: 1,
