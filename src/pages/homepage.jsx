@@ -296,7 +296,6 @@ function ProductGrid({ navigate }) {
                     : undefined
                 }
                 onClick={() => navigate(`/product/${listing.id}`)}
-                aspectRatio={listing.aspectRatio}
               />
             ))}
           </div>
