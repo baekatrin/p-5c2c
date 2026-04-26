@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import Card from "./card";
@@ -48,6 +48,10 @@ export default function MyProfile() {
     profilePic: "",
   });
 
+  // Profile picture upload
+  const fileInputRef = useRef(null);
+  const [uploadingPic, setUploadingPic] = useState(false);
+
   // ── Load profile + own listings + reviews received
   useEffect(() => {
     async function load() {
@@ -86,6 +90,45 @@ export default function MyProfile() {
     }
     load();
   }, []);
+
+  // ── Upload a profile picture to Supabase Storage
+  // Bucket required: "profile-pics" (Public). Create it in Supabase Dashboard → Storage.
+  async function handleProfilePicUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingPic(true);
+    setSaveMessage({ type: "", text: "" });
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setUploadingPic(false);
+      return;
+    }
+
+    const ext = file.name.split(".").pop();
+    const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("profile-pics")
+      .upload(path, file);
+
+    if (uploadError) {
+      setSaveMessage({ type: "error", text: "Upload failed: " + uploadError.message });
+      setUploadingPic(false);
+      return;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from("profile-pics")
+      .getPublicUrl(path);
+
+    setEditForm((prev) => ({ ...prev, profilePic: publicUrl }));
+    setUploadingPic(false);
+
+    // Clear the file input so the same file can be reselected if needed
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
 
   // ── Save profile edits
   async function handleSave() {
@@ -258,13 +301,45 @@ export default function MyProfile() {
                 {SCHOOLS.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
 
-              <input
-                style={styles.editInput}
-                type="url"
-                placeholder="Profile picture URL"
-                value={editForm.profilePic}
-                onChange={(e) => setEditForm({ ...editForm, profilePic: e.target.value })}
-              />
+              {/* Profile picture upload */}
+              <div style={styles.picUploadRow}>
+                <div style={styles.picPreview}>
+                  {editForm.profilePic ? (
+                    <img src={editForm.profilePic} alt="Preview" style={styles.picPreviewImg} />
+                  ) : (
+                    <span style={styles.picPreviewPlaceholder}>No photo</span>
+                  )}
+                </div>
+                <div style={styles.picUploadBtns}>
+                  <button
+                    type="button"
+                    style={styles.picUploadBtn}
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingPic}
+                  >
+                    {uploadingPic
+                      ? "Uploading..."
+                      : (editForm.profilePic ? "Change photo" : "Upload photo")}
+                  </button>
+                  {editForm.profilePic && (
+                    <button
+                      type="button"
+                      style={styles.picRemoveBtn}
+                      onClick={() => setEditForm((prev) => ({ ...prev, profilePic: "" }))}
+                      disabled={uploadingPic}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={handleProfilePicUpload}
+                />
+              </div>
 
               <textarea
                 style={{ ...styles.editInput, minHeight: "70px", resize: "vertical" }}
@@ -324,23 +399,24 @@ export default function MyProfile() {
       </div>
 
       {/* ── MY LISTINGS ── */}
-      <div style={styles.listingsSection}>
-        <h2 style={styles.sectionTitle}>
-          My Listings
-          <span style={styles.listingCount}>{listings.length} active</span>
-        </h2>
-
-        {listings.length === 0 ? (
-          <div style={styles.emptyListings}>
-            <p style={styles.emptyText}>You haven't posted any listings yet.</p>
+        <div style={styles.listingsSection}>
+          <div style={styles.listingsHeader}>
+            <h2 style={styles.sectionTitle}>
+              My Listings
+              <span style={styles.listingCount}>{listings.length} active</span>
+            </h2>
             <button
               style={styles.createCta}
               onClick={() => navigate("/createlisting")}
             >
-              + Create your first listing
+              + Create Listing
             </button>
           </div>
-        ) : (
+          {listings.length === 0 ? (
+            <div style={styles.emptyListings}>
+              <p style={styles.emptyText}>You haven't posted any listings yet.</p>
+            </div>
+          ) : (
           <div style={styles.grid}>
             {columns.map((col, colIndex) => (
               <div key={colIndex} style={styles.column}>
@@ -523,6 +599,61 @@ const styles = {
     boxSizing: "border-box",
   },
 
+  // Profile picture upload
+  picUploadRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "16px",
+  },
+  picPreview: {
+    width: "80px",
+    height: "80px",
+    borderRadius: "50%",
+    border: "1.5px solid var(--color-border)",
+    backgroundColor: "var(--color-surface)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    flexShrink: 0,
+  },
+  picPreviewImg: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+  },
+  picPreviewPlaceholder: {
+    fontSize: "11px",
+    color: "var(--color-text-muted)",
+    fontFamily: "var(--font-body)",
+  },
+  picUploadBtns: {
+    display: "flex",
+    gap: "8px",
+  },
+  picUploadBtn: {
+    padding: "10px 18px",
+    backgroundColor: "var(--color-surface)",
+    color: "var(--color-text)",
+    border: "1.5px dashed var(--color-border)",
+    borderRadius: "8px",
+    fontSize: "13px",
+    fontFamily: "var(--font-display)",
+    fontWeight: "600",
+    cursor: "pointer",
+  },
+  picRemoveBtn: {
+    padding: "10px 18px",
+    backgroundColor: "#fff",
+    color: "var(--color-primary)",
+    border: "1.5px solid var(--color-primary)",
+    borderRadius: "8px",
+    fontSize: "13px",
+    fontFamily: "var(--font-display)",
+    fontWeight: "600",
+    cursor: "pointer",
+  },
+
   // Buttons
   editBtn: {
     padding: "12px 28px",
@@ -603,6 +734,15 @@ const styles = {
     maxWidth: "1200px",
     margin: "40px auto 0",
     padding: "0 40px",
+  },
+  listingsHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "20px",
+  },
+  sectionTitle: {
+    // ... existing stuff stays
   },
   sectionTitle: {
     fontFamily: "var(--font-display)",
