@@ -54,7 +54,7 @@ const InboxIcon = () => (
  *  navigate(pageName) — call this to switch pages.
  *  onLogout() — call this to log out the user.
  */
-function Navbar({ navigate, onLogout, userId }) {
+export function AppNavbar({ navigate, onLogout }) {
   const [searchValue, setSearchValue] = useState("");
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
@@ -342,7 +342,7 @@ export default function HomePage({ userId }) {
 
   return (
     <div style={styles.appShell}>
-      <Navbar navigate={navigate} onLogout={handleLogout} userId={userId} />
+      <AppNavbar navigate={navigate} onLogout={handleLogout} />
       <ProductGrid navigate={navigate} />
     </div>
   );

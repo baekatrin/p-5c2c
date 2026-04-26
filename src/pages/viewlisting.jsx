@@ -632,6 +632,7 @@ const styles = {
     fontSize: "15px",
     lineHeight: 1.5,
     color: "#333",
+    whiteSpace: "pre-wrap",
   },
   creatorRow: {
     display: "flex",

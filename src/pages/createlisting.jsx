@@ -134,13 +134,7 @@ export default function CreateListing() {
   return (
     <div style={styles.page}>
       {/* Header */}
-      <div style={styles.header}>
-        <div style={styles.headerInner}>
-          <span style={styles.logo}>5C2C</span>
-          <span style={styles.headerDivider}>|</span>
-          <span style={styles.headerTitle}>Create a Listing</span>
-        </div>
-      </div>
+      
 
       <form onSubmit={handlePublish} style={styles.form}>
 
