@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { createRoot } from 'react-dom/client'
-import { HashRouter, Routes, Route, Navigate } from "react-router-dom"
+import { HashRouter, Routes, Route, Navigate, Outlet, useLocation, useNavigate } from "react-router-dom"
 import { supabase } from '../supabaseClient';
 import './index.css'
-import HomePage from "./homepage";
+import HomePage, { AppNavbar } from "./homepage";
 import CreateListing from "./createlisting";
 import ViewListing from "./viewlisting";
 import ViewProfile from "./viewprofile";
@@ -24,6 +24,30 @@ const ALLOWED_DOMAINS = [
     "students.scrippscollege.edu", 
     "students.pitzer.edu",
 ]
+
+function AppLayout() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const onHome = location.pathname === "/";
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+  }
+
+  return (
+    <div style={layoutStyles.shell}>
+      {!onHome && (
+        <AppNavbar
+          navigate={(path) => navigate(path)}
+          onLogout={handleLogout}
+        />
+      )}
+      <main style={onHome ? layoutStyles.contentHome : layoutStyles.content}>
+        <Outlet />
+      </main>
+    </div>
+  );
+}
 
 export function App() {
   const [loading, setLoading] = useState(true);
@@ -139,21 +163,36 @@ export function App() {
           </>
         ) : (
           <>
-            <Route path="/" element={<HomePage userId={session?.user?.id} />} />
-            <Route path="/favorites" element={<Favorites />} />
-            <Route path="/createlisting" element={<CreateListing />} />
-            <Route path="/product/:id" element={<ViewListing />} />
-            <Route path="/profile" element={<MyProfile />} />          {/* ← addition for myprofile page */}
-            <Route path="/profile/:id" element={<ViewProfile />} />
-            <Route path="/messages" element={<Inbox />} />
-            <Route path="/chat/:id" element={<ChatPage />} />
-            <Route path="*" element={<Navigate to="/" />} />
+            <Route element={<AppLayout />}>
+              <Route path="/" element={<HomePage userId={session?.user?.id} />} />
+              <Route path="/favorites" element={<Favorites />} />
+              <Route path="/createlisting" element={<CreateListing />} />
+              <Route path="/product/:id" element={<ViewListing />} />
+              <Route path="/profile" element={<MyProfile />} />
+              <Route path="/profile/:id" element={<ViewProfile />} />
+              <Route path="/messages" element={<Inbox />} />
+              <Route path="/chat/:id" element={<ChatPage />} />
+              <Route path="*" element={<Navigate to="/" />} />
+            </Route>
           </>
         )}
       </Routes>
     </HashRouter>
   );
 }
+
+const layoutStyles = {
+  shell: {
+    minHeight: "100vh",
+    backgroundColor: "#fff5da",
+  },
+  content: {
+    paddingTop: "12px",
+  },
+  contentHome: {
+    paddingTop: 0,
+  },
+};
 
 createRoot(document.getElementById('root')).render(
   <App />
