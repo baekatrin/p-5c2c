@@ -22,7 +22,66 @@ import logo from "../assets/logo3.png";
 import Card from "./card";
 import { supabase } from "../supabaseClient";
 
+const CATEGORIES = [
+  { id: "beauty",   label: "Beauty & Cosmetics" },
+  { id: "art",      label: "Art & Design" },
+  { id: "clothing", label: "Clothing & Alterations" },
+  { id: "rides",    label: "Rides & Transport" },
+  { id: "cooking",  label: "Cooking & Baked Goods" },
+  { id: "tutoring", label: "Tutoring" },
+  { id: "other",    label: "Other" },
+];
 
+
+
+function CategoryBar({ selected, onSelect }) {
+  return (
+    <div style={catStyles.bar}>
+      <button
+        style={{ ...catStyles.chip, ...(selected === "" ? catStyles.chipActive : {}) }}
+        onClick={() => onSelect("")}
+      >
+        All
+      </button>
+      {CATEGORIES.map((cat) => (
+        <button
+          key={cat.id}
+          style={{ ...catStyles.chip, ...(selected === cat.id ? catStyles.chipActive : {}) }}
+          onClick={() => onSelect(selected === cat.id ? "" : cat.id)}
+        >
+          {cat.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+const catStyles = {
+  bar: {
+    display: "flex",
+    gap: "8px",
+    padding: "12px 28px",
+    overflowX: "auto",
+    backgroundColor: "var(--color-surface)",
+    borderBottom: "1.5px solid var(--color-border)",
+  },
+  chip: {
+    padding: "6px 16px",
+    borderRadius: "999px",
+    border: "1.5px solid var(--color-border)",
+    backgroundColor: "transparent",
+    fontSize: "13px",
+    fontFamily: "var(--font-display)",
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+    transition: "background 0.15s",
+  },
+  chipActive: {
+    backgroundColor: "var(--color-primary)",
+    color: "#fff",
+    borderColor: "var(--color-primary)",
+  },
+};
 
 function isUuidLike(id) {
   return typeof id === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
@@ -54,15 +113,13 @@ const InboxIcon = () => (
  *  navigate(pageName) — call this to switch pages.
  *  onLogout() — call this to log out the user.
  */
-export function AppNavbar({ navigate, onLogout }) {
+export function AppNavbar({ navigate, onLogout, userId, onSearch }) {
   const [searchValue, setSearchValue] = useState("");
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   function handleSearch(e) {
-    // Prevent the page from refreshing when user hits Enter
     e.preventDefault();
-    // TODO: wire this up to a real search results page
-    console.log("Searching for:", searchValue);
+    onSearch(searchValue);
   }
 
   const handleLogout = async () => {
@@ -172,7 +229,7 @@ export function AppNavbar({ navigate, onLogout }) {
 /**
  * ProductGrid — lays out all ProductCards in a responsive 4-column grid.
  */
-function ProductGrid({ navigate }) {
+function ProductGrid({ navigate, searchQuery, selectedCategory }) {
   const [listings, setListings] = useState([]);
   const [favoritedIds, setFavoritedIds] = useState(() => new Set());
 
@@ -200,10 +257,20 @@ function ProductGrid({ navigate }) {
 
   useEffect(() => {
     async function loadListings() {
-      const { data: listingData } = await supabase
+      let query = supabase
         .from("listings")
         .select("*")
         .order("created_at", { ascending: false });
+
+      if (searchQuery) {
+        query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,category.ilike.%${searchQuery}%`);
+      }
+
+      if (selectedCategory) {
+        query = query.eq("category", selectedCategory);
+      }
+
+      const { data: listingData } = await query;
 
       if (!listingData) return;
 
@@ -218,7 +285,7 @@ function ProductGrid({ navigate }) {
       setListings(listingData.map((l) => ({ ...l, sellerUsername: usernameMap[l.seller_id] ?? l.seller_id })));
     }
     loadListings();
-  }, []);
+  }, [searchQuery, selectedCategory]);
 
   useEffect(() => {
     loadFavorites();
@@ -329,6 +396,8 @@ function ProductGrid({ navigate }) {
 //   }
 export default function HomePage({ userId }) {
   const navigateTo = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -342,8 +411,9 @@ export default function HomePage({ userId }) {
 
   return (
     <div style={styles.appShell}>
-      <AppNavbar navigate={navigate} onLogout={handleLogout} />
-      <ProductGrid navigate={navigate} />
+      <AppNavbar navigate={navigate} onLogout={handleLogout} userId={userId} onSearch={setSearchQuery} />
+      <CategoryBar selected={selectedCategory} onSelect={setSelectedCategory} />
+      <ProductGrid navigate={navigate} searchQuery={searchQuery} selectedCategory={selectedCategory} />
     </div>
   );
 }
