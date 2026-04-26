@@ -41,14 +41,14 @@ function isUuidLike(id) {
 // Clean inline SVG icons so we don't need an icon library dependency.
 
 const HeartIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
   </svg>
 );
 
 
 const InboxIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
     <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
   </svg>
@@ -63,7 +63,7 @@ const InboxIcon = () => (
  *  navigate(pageName) — call this to switch pages.
  *  onLogout() — call this to log out the user.
  */
-function Navbar({ navigate, onLogout }) {
+function Navbar({ navigate, onLogout, userId }) {
   const [searchValue, setSearchValue] = useState("");
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
@@ -151,12 +151,17 @@ function Navbar({ navigate, onLogout }) {
 
           {showProfileMenu && (
             <div style={styles.profileDropdown}>
-              <button 
+              <button
                 type="button"
                 style={styles.dropdownBtn}
-                onClick={() => {
+                onClick={async () => {
                   setShowProfileMenu(false);
-                  navigate("/profile");
+                  if (userId) {
+                    navigate(`/profile/${userId}`);
+                  } else {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (user) navigate(`/profile/${user.id}`);
+                  }
                 }}
               >
                 See Profile
@@ -330,7 +335,7 @@ function ProductGrid({ navigate }) {
 //     // Scroll back to top whenever you navigate
 //     window.scrollTo({ top: 0, behavior: "smooth" });
 //   }
-export default function HomePage() {   // ← also capitalize: HomePage not homepage
+export default function HomePage({ userId }) {
   const navigateTo = useNavigate();
 
   async function handleLogout() {
@@ -345,7 +350,7 @@ export default function HomePage() {   // ← also capitalize: HomePage not home
 
   return (
     <div style={styles.appShell}>
-      <Navbar navigate={navigate} onLogout={handleLogout} />
+      <Navbar navigate={navigate} onLogout={handleLogout} userId={userId} />
       <ProductGrid navigate={navigate} />
     </div>
   );
@@ -422,8 +427,8 @@ const styles = {
     flexShrink: 0,
   },
   searchForm: {
-    flex: 1,                       // Takes up all remaining space between logo and buttons
-    minWidth: 0,                   // Prevents flex children from overflowing under right-side controls
+    flex: 0.5,
+    minWidth: 0,
     position: "relative",
     zIndex: 1,
   },
@@ -438,7 +443,7 @@ const styles = {
     boxSizing: "border-box",
   },
   createBtn: {
-    padding: "10px 20px",
+    padding: "10px 40px",
     backgroundColor: "#941b32",
     color: "#fff",
     border: "1.5px solid #000000",
@@ -473,7 +478,7 @@ const styles = {
     background: "none",
     border: "none",
     cursor: "pointer",
-    padding: "8px",
+    padding: "10px",
     borderRadius: "8px",
     color: "#333",
     display: "flex",
@@ -489,8 +494,8 @@ const styles = {
     marginLeft: "4px",
   },
   avatarCircle: {
-    width: "36px",
-    height: "36px",
+    width: "42px",
+    height: "42px",
     borderRadius: "50%",
     backgroundColor: "#ddd",
     display: "flex",

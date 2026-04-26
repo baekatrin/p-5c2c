@@ -31,6 +31,9 @@
   --color-text-muted: #555555;
   --color-primary:    #941b32;
   --color-accent:     #f39836;
+  --color-blue:       #015a9e;
+  --color-yellow:     #fab92d;
+  --color-green:      #34715d;
 
   /* Typography */
   --font-display: 'Pally', sans-serif;   /* titles, headings, nav */

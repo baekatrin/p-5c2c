@@ -152,6 +152,7 @@ export default function LoginPrompt({ emailError }) {
                 <p style={styles.disclaimer}>
                     You must use your 5C student email to sign in.
                 </p>
+
             </div>
         </div>
     );
