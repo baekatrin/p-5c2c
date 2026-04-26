@@ -56,12 +56,41 @@ export default function Favorites() {
       return;
     }
 
+    const sellerIds = [
+      ...new Set(
+        (listings || []).map((l) => l.seller_id).filter(Boolean)
+      ),
+    ];
+
+    const sellerLabelById = new Map();
+    if (sellerIds.length > 0) {
+      const { data: sellers, error: sellerErr } = await supabase
+        .from("User")
+        .select("id, username, firstName, lastName")
+        .in("id", sellerIds);
+
+      if (!sellerErr && sellers) {
+        for (const u of sellers) {
+          const fullName = [u.firstName, u.lastName].filter(Boolean).join(" ").trim();
+          sellerLabelById.set(
+            u.id,
+            u.username || fullName || String(u.id)
+          );
+        }
+      }
+    }
+
     const byId = new Map((listings || []).map((l) => [l.id, l]));
     setRows(
-      (favs || []).map((f) => ({
-        ...f,
-        listing: byId.get(f.serviceID) || null,
-      }))
+      (favs || []).map((f) => {
+        const listing = byId.get(f.serviceID) || null;
+        const sid = listing?.seller_id;
+        const sellerLabel =
+          sid != null
+            ? sellerLabelById.get(sid) || String(sid)
+            : null;
+        return { ...f, listing, sellerLabel };
+      })
     );
     setLoading(false);
   }
@@ -129,7 +158,7 @@ export default function Favorites() {
             const cardListing = {
               id: l.id,
               name: l.title,
-              seller: l.seller_id,
+              seller: row.sellerLabel || "Unknown seller",
               images: l.images,
               description: l.description,
               priceMin: l.price_min,
