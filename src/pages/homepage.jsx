@@ -116,6 +116,44 @@ const InboxIcon = () => (
 export function AppNavbar({ navigate, onLogout, userId, onSearch }) {
   const [searchValue, setSearchValue] = useState("");
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [profilePicUrl, setProfilePicUrl] = useState("");
+  const [avatarInitials, setAvatarInitials] = useState("U");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadNavbarProfile() {
+      let targetUserId = userId;
+      if (!targetUserId) {
+        const { data: auth } = await supabase.auth.getUser();
+        targetUserId = auth.user?.id;
+      }
+
+      if (!targetUserId) return;
+
+      const { data, error } = await supabase
+        .from("User")
+        .select("username, firstName, lastName, profilePic")
+        .eq("id", targetUserId)
+        .maybeSingle();
+
+      if (!isMounted || error || !data) return;
+
+      const first = (data.firstName || "").trim();
+      const last = (data.lastName || "").trim();
+      const username = (data.username || "").trim();
+      const fromNames = `${first[0] || ""}${last[0] || ""}`.toUpperCase();
+      const fallbackInitials = (fromNames || username.slice(0, 2).toUpperCase() || "U");
+
+      setAvatarInitials(fallbackInitials);
+      setProfilePicUrl((data.profilePic || "").trim());
+    }
+
+    loadNavbarProfile();
+    return () => {
+      isMounted = false;
+    };
+  }, [userId]);
 
   function handleSearch(e) {
     e.preventDefault();
@@ -193,7 +231,11 @@ export function AppNavbar({ navigate, onLogout, userId, onSearch }) {
             title="Profile"
           >
             <div style={styles.avatarCircle}>
-              <span style={styles.avatarInitials}>U</span>
+              {profilePicUrl ? (
+                <img src={profilePicUrl} alt="Profile" style={styles.avatarImage} />
+              ) : (
+                <span style={styles.avatarInitials}>{avatarInitials}</span>
+              )}
             </div>
           </button>
 
@@ -564,6 +606,12 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
+  },
+  avatarImage: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    display: "block",
   },
   avatarInitials: {
     fontSize: "14px",

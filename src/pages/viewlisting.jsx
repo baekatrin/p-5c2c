@@ -44,6 +44,7 @@ export default function ViewListing() {
   const [favoriteBusy, setFavoriteBusy] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [sellerName, setSellerName] = useState("Shop Name");
+  const [sellerProfilePic, setSellerProfilePic] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [brokenImageIndexes, setBrokenImageIndexes] = useState([]);
@@ -99,13 +100,14 @@ export default function ViewListing() {
 
       if (!listingData?.seller_id) {
         setSellerName("Unknown seller");
+        setSellerProfilePic("");
         setLoading(false);
         return;
       }
 
       const { data: sellerData, error: sellerError } = await supabase
         .from("User")
-        .select("username, firstName, lastName")
+        .select("username, firstName, lastName, profilePic")
         .eq("id", listingData.seller_id)
         .single();
 
@@ -113,6 +115,7 @@ export default function ViewListing() {
 
       if (sellerError) {
         setSellerName(listingData.seller_id || "Unknown seller");
+        setSellerProfilePic("");
         setLoading(false);
         return;
       }
@@ -122,6 +125,7 @@ export default function ViewListing() {
         .join(" ")
         .trim();
       setSellerName(fullName || sellerData?.username || "Unknown seller");
+      setSellerProfilePic((sellerData?.profilePic || "").trim());
       setLoading(false);
     }
 
@@ -405,9 +409,13 @@ export default function ViewListing() {
 
           <div style={styles.creatorRow}>
             <div style={styles.creatorAvatar}>
-              <span style={styles.creatorInitial}>
-                {sellerName ? sellerName[0].toUpperCase() : "S"}
-              </span>
+              {sellerProfilePic ? (
+                <img src={sellerProfilePic} alt={`${sellerName} profile`} style={styles.creatorAvatarImage} />
+              ) : (
+                <span style={styles.creatorInitial}>
+                  {sellerName ? sellerName[0].toUpperCase() : "S"}
+                </span>
+              )}
             </div>
             <div style={styles.creatorInfo}>
               <p style={styles.creatorLabel}>About the Creator</p>
@@ -657,6 +665,13 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     border: "1px solid #000",
+    overflow: "hidden",
+  },
+  creatorAvatarImage: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    display: "block",
   },
   creatorInitial: {
     fontSize: "16px",
